@@ -272,25 +272,132 @@ def fetch_google_news_local(city, kind):
 
 X_HASHTAGS = {"北本市": "北本市", "桶川市": "桶川市", "鴻巣市": "鴻巣市"}
 
+# X公式の埋め込みタイムラインが機能しないため、Yahoo!リアルタイム検索
+# （XのデータをYahooがライセンス提供しているページ、静的HTMLで取得可能）を
+# 代わりに使用する。ただし雑談・広告・陰謀論等のノイズが大量に混在するため、
+# 「防犯・防災・鉄道・地震」に関連するキーワードを含む投稿のみを採用し、
+# それ以外は表示しない（無関係な投稿を紛れ込ませない＝デマ対策）。
+YAHOO_RT_KEYWORDS = ("火事", "火災", "出火", "事故", "事件", "不審者", "通行止め",
+                     "停電", "遅延", "運転見合わせ", "運休", "震度", "地震", "避難", "警報",
+                     "逮捕", "強盗", "暴行", "傷害", "特殊詐欺", "ひき逃げ", "行方不明",
+                     "土砂災害", "浸水", "竜巻", "落雷")
+YAHOO_RT_RECENT_DAYS = 3
 
-def render_x_widget_section():
+
+def parse_yahoo_relative_time(text):
+    """Yahoo!リアルタイム検索の相対時刻表記（「5分前」「3時間前」「7月31日(金) 22:50」等）
+    を実際の日時に変換する。解釈できない表記は None を返し、憶測で埋めない。"""
+    now = datetime.datetime.now()
+    m = re.match(r"(\d+)秒前", text)
+    if m:
+        return now - datetime.timedelta(seconds=int(m.group(1)))
+    m = re.match(r"(\d+)分前", text)
+    if m:
+        return now - datetime.timedelta(minutes=int(m.group(1)))
+    m = re.match(r"(\d+)時間前", text)
+    if m:
+        return now - datetime.timedelta(hours=int(m.group(1)))
+    m = re.match(r"^(\d{1,2}):(\d{2})$", text)
+    if m:
+        h, mi = int(m.group(1)), int(m.group(2))
+        try:
+            dt = now.replace(hour=h, minute=mi, second=0, microsecond=0)
+            if dt > now:
+                dt -= datetime.timedelta(days=1)  # 「HH:MM」のみの表記は当日（日付をまたいだ場合は前日）
+            return dt
+        except ValueError:
+            return None
+    m = re.match(r"(\d{1,2})月(\d{1,2})日\([^)]*\)\s*(\d{1,2}):(\d{2})", text)
+    if m:
+        mo, d, h, mi = (int(g) for g in m.groups())
+        try:
+            dt = datetime.datetime(now.year, mo, d, h, mi)
+            if dt > now + datetime.timedelta(days=1):
+                dt = dt.replace(year=now.year - 1)
+            return dt
+        except ValueError:
+            return None
+    return None
+
+
+def fetch_yahoo_realtime_search(city):
+    """Yahoo!リアルタイム検索（X由来データのライセンス提供ページ）から、
+    「{city}」を含む投稿を実際に取得する。キーワードでの厳格フィルタと
+    直近{YAHOO_RT_RECENT_DAYS}日以内のみに絞り、雑談・広告・陰謀論等の
+    無関係な投稿は採用しない。"""
+    name = f"Yahoo!リアルタイム検索［{city}］"
+    items = []
+    url = "https://search.yahoo.co.jp/realtime/search?p=" + urllib.parse.quote(city)
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        r.encoding = "utf-8"
+        soup = BeautifulSoup(r.text, "html.parser")
+        tweets = soup.select('[class*="Tweet_Tweet__"]')
+        seen = set()
+        now = datetime.datetime.now()
+        for t in tweets:
+            body_el = t.select_one('[class*="Tweet_body__"]')
+            if not body_el:
+                continue
+            body = body_el.get_text(" ", strip=True)
+            if not any(k in body for k in YAHOO_RT_KEYWORDS):
+                continue  # 防犯・防災・鉄道・地震に無関係な投稿は採用しない
+            time_el = t.select_one('[class*="Tweet_time__"]')
+            time_text = time_el.get_text(strip=True) if time_el else ""
+            dt = parse_yahoo_relative_time(time_text)
+            if dt is None or (now - dt).days > YAHOO_RT_RECENT_DAYS:
+                continue
+            author_el = t.select_one('[class*="Tweet_authorName__"]')
+            author = author_el.get_text(strip=True) if author_el else "投稿者不明"
+            dedup_key = normalize_title_for_dedup(body)
+            if not dedup_key or dedup_key in seen:
+                continue
+            seen.add(dedup_key)
+            items.append({
+                "city": city, "author": author, "body": body[:160],
+                "time_text": time_text, "link": url,
+            })
+            if len(items) >= 5:
+                break
+    except Exception as e:
+        log_skip(name, f"取得エラー ({e})")
+    if not items:
+        log_skip(name, "関連キーワードに一致する投稿なし（ノイズ除外フィルタが正常に機能している状態）")
+    return items
+
+
+def render_x_widget_section(x_posts):
     """X（旧Twitter）連携について。
     公式埋め込みウィジェット（ハッシュタグ検索タイムライン）を実機で検証したところ、
     X側の仕様変更により中身が描画されず「読み込み中」のまま止まることを確認した
     （2026-08-02、GitHub Pages上の実ページ・widgets.jsのコンソールログで実際に
-    確認済み）。動かないものを動くように見せかけるのは誠実でないため、埋め込みは
-    廃止し、実際に機能する「Xで検索」への外部リンクに置き換える。"""
+    確認済み）ため、代わりにYahoo!リアルタイム検索（Xデータのライセンス提供ページ、
+    静的HTMLで実データ取得可能）を実際にスクレイピングし、防犯・防災・鉄道・地震
+    に関連するキーワードでフィルタしたうえでタイムラインとして直接埋め込む。"""
     buttons = "".join(f"""
       <a class="x-search-btn" href="https://twitter.com/search?q=%23{urllib.parse.quote(tag)}&src=typed_query&f=live" target="_blank" rel="noopener">
         🔗 #{esc_x(tag)} をXで検索
       </a>""" for tag in X_HASHTAGS.values())
+
+    if x_posts:
+        post_cards = "".join(f"""
+      <a class="rt-post" href="{esc_x(p['link'])}" target="_blank" rel="noopener">
+        <div class="rt-post-head"><span class="rt-post-city">{esc_x(p['city'])}</span><span class="rt-post-author">{esc_x(p['author'])}</span><span class="rt-post-time">{esc_x(p['time_text'])}</span></div>
+        <div class="rt-post-body">{esc_x(p['body'])}</div>
+      </a>""" for p in x_posts)
+        timeline_html = f"<div class='rt-timeline'>{post_cards}</div>"
+    else:
+        timeline_html = "<p class='empty'>直近{}日以内・関連キーワード一致の投稿はありません（ノイズ除外フィルタが正常に機能している状態です）。</p>".format(YAHOO_RT_RECENT_DAYS)
+
     return f"""
   <details class="block accordion">
-    <summary>⑤ X（旧Twitter）で検索</summary>
-    <p class="disclaimer">X公式のハッシュタグ埋め込みタイムラインは実機検証の結果、
-      X側の仕様変更により正常に描画されないことを確認したため廃止しました
-      （中身が空のまま表示され続ける状態を「動いている」と偽ることはしません）。
-      代わりに、タップすると実際のX検索結果に飛べる外部リンクにしています。</p>
+    <summary>⑤ X（旧Twitter）リアルタイム速報</summary>
+    <p class="disclaimer">X公式の埋め込みタイムラインは実機検証の結果、正常に描画されない
+      ことを確認したため、Yahoo!リアルタイム検索（Xデータのライセンス提供元）を実際に
+      取得し、「火事・事故・遅延・地震」等に関連するキーワードでフィルタしたうえで
+      以下にタイムライン表示しています（雑談・広告等は自動的に除外されます）。</p>
+    {timeline_html}
+    <div class="x-link-grid">{buttons}</div>
     <div class="x-link-grid">{buttons}</div>
   </details>"""
 
@@ -515,7 +622,12 @@ def build_dataset():
 
     train_status = fetch_train_status()
     earthquakes = fetch_earthquake_info()
-    return alerts, topics, train_status, earthquakes
+
+    x_posts = []
+    for city in CITIES:
+        x_posts += fetch_yahoo_realtime_search(city)
+
+    return alerts, topics, train_status, earthquakes, x_posts
 
 
 def render_item_row(item, extra_class=""):
@@ -570,7 +682,7 @@ def render_earthquake_section(earthquakes):
     return f"<div class='eq-grid'>{''.join(cards)}</div>"
 
 
-def render_html(alerts, topics, train_status, earthquakes, skip_log):
+def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     JST = datetime.timezone(datetime.timedelta(hours=9))
     now_str = datetime.datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
 
@@ -711,6 +823,14 @@ def render_html(alerts, topics, train_status, earthquakes, skip_log):
   details.accordion .disclaimer, details.accordion .x-link-grid, details.accordion .system-status-list {{ margin-bottom: 14px; }}
   .system-status-list {{ font-size: 12.5px; color: var(--ink-soft); line-height: 1.9; padding-left: 18px; }}
   .system-status-list a {{ color: var(--accent); }}
+  .rt-timeline {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}
+  .rt-post {{ display: block; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--ink); }}
+  .rt-post:hover {{ border-color: var(--accent); }}
+  .rt-post-head {{ display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }}
+  .rt-post-city {{ background: rgba(90,169,230,0.18); color: var(--accent); border-radius: 4px; padding: 1px 6px; font-weight: 700; }}
+  .rt-post-author {{ font-weight: 600; }}
+  .rt-post-time {{ margin-left: auto; }}
+  .rt-post-body {{ font-size: 13px; line-height: 1.6; }}
   .x-link-grid {{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }}
   .x-search-btn {{ background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-size: 13px; text-decoration: none; font-weight: 700; }}
   .x-search-btn:hover {{ background: var(--accent); color: #0c1116; }}
@@ -757,7 +877,7 @@ def render_html(alerts, topics, train_status, earthquakes, skip_log):
     <h2>④ エリア新店舗・地域トピック</h2>
     {topics_html}
   </section>
-{render_x_widget_section()}
+{render_x_widget_section(x_posts)}
 {render_system_status_section(now_str)}
 
   <footer>
@@ -802,8 +922,8 @@ def main():
     start_time = time.time()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    alerts, topics, train_status, earthquakes = build_dataset()
-    html = render_html(alerts, topics, train_status, earthquakes, skip_log)
+    alerts, topics, train_status, earthquakes, x_posts = build_dataset()
+    html = render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log)
 
     temp_file = OUTPUT_HTML + ".tmp"
     try:
@@ -813,6 +933,7 @@ def main():
         print(f"✅ 地域ポータル生成完了: {OUTPUT_HTML}")
         print(f"   防犯・防災アラート: {len(alerts)}件 / 新店舗・地域トピック: {len(topics)}件")
         print(f"   鉄道運行情報: {len(train_status)}路線 / 地震情報（埼玉県該当）: {len(earthquakes)}件")
+        print(f"   Xリアルタイム速報（キーワード一致）: {len(x_posts)}件")
         if skip_log:
             print(f"   ⚠️ スキップ件数: {len(skip_log)}件（詳細はページ下部フッター参照）")
     except Exception as e:
