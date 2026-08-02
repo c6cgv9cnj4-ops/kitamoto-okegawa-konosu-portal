@@ -548,17 +548,19 @@ def fetch_gomi_konosu():
         rows = []
         with pdfplumber.open(io.BytesIO(r.content)) as pdf:
             text = pdf.pages[0].extract_text() or ""
+        # カテゴリ名と曜日表記の間には長い商品説明文が挟まるため、間隔を
+        # 厳密な空白のみに限定せず、一定範囲内（250文字）で非貪欲に探す
         patterns = [
-            ("燃やせるごみ", r"燃やせるごみ\s*\n?([火金・、\s]+曜日)"),
-            ("燃やせないごみ", r"燃やせないごみ\s*\n?(月曜日)"),
-            ("プラスチック製容器包装（資源）", r"容器包装\(資源\)類\s*\n?(木曜日)"),
-            ("ビン類・カン類", r"ビン類・カン類\s*\n?(第[１1]・[３3]水曜日)"),
-            ("ペットボトル", r"ペットボトル\s*\n?(第[１1]・[３3]水曜日)"),
-            ("紙類・布類・衣類", r"紙類・布類・衣類\s*\n?(第[１1]・[３3]水曜日)"),
-            ("金属類", r"金属類\s*\n?(第[２2]・[４4]水曜日)"),
+            ("燃やせるごみ", r"燃やせるごみ.{0,250}?([火金・、\s]+曜日)"),
+            ("燃やせないごみ", r"燃やせないごみ.{0,250}?(月曜日)"),
+            ("プラスチック製容器包装（資源）", r"容器包装\(資源\)類.{0,250}?(木曜日)"),
+            ("ビン類・カン類", r"ビン類・カン類.{0,250}?(第[１1]・[３3]水曜日)"),
+            ("ペットボトル", r"ペットボトル.{0,250}?(第[１1]・[３3]水曜日)"),
+            ("紙類・布類・衣類", r"紙類・布類・衣類.{0,250}?(第[１1]・[３3]水曜日)"),
+            ("金属類", r"金属類.{0,250}?(第[２2]・[４4]水曜日)"),
         ]
         for category, pat in patterns:
-            m = re.search(pat, text)
+            m = re.search(pat, text, re.S)
             if m:
                 rows.append({"category": category, "rule": m.group(1)})
         return rows
@@ -853,6 +855,112 @@ def extract_event_countdowns(topics):
             break
     results.sort(key=lambda x: x["days_left"])
     return results
+
+
+RAMEN_DB_CITIES = {"北本市": "北本市", "桶川市": "桶川市"}
+
+
+def fetch_ramen_db(city):
+    """ラーメンデータベース（ramendb.supleks.jp）の実際の検索結果ページから、
+    現時点のポイント・レビュー数を取得する。このサイト・API双方とも過去の
+    月別推移データを提供していないため、「推移」ではなく「現時点の
+    ランキング」として正直に扱う（存在しない推移データを憶測で作らない）。"""
+    name = f"ラーメンデータベース［{city}］"
+    items = []
+    url = "https://ramendb.supleks.jp/search?q=" + urllib.parse.quote(city)
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        r.encoding = "utf-8"
+        soup = BeautifulSoup(r.text, "html.parser")
+        for li in soup.select("#searched > li")[:5]:
+            name_a = li.select_one("h4 a")
+            if not name_a:
+                continue
+            text = li.get_text(" ", strip=True)
+            pt_m = re.search(r"([\d.]+)\s*ポイント", text)
+            rv_m = re.search(r"(\d+)\s*レビュー", text)
+            if not pt_m:
+                continue
+            items.append({
+                "shop": name_a.get_text(strip=True),
+                "point": pt_m.group(1),
+                "reviews": rv_m.group(1) if rv_m else "?",
+                "link": requests.compat.urljoin(url, name_a.get("href", "")),
+            })
+    except Exception as e:
+        log_skip(name, f"取得エラー ({e})")
+    if not items:
+        log_skip(name, "該当店舗なし")
+    return items
+
+
+RDB_HISTORY_PATH = os.path.join(OUTPUT_DIR, "rdb_history.json")
+
+
+def load_rdb_history():
+    try:
+        with open(RDB_HISTORY_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_rdb_history(history):
+    try:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        with open(RDB_HISTORY_PATH, "w", encoding="utf-8") as f:
+            json.dump(history, f, ensure_ascii=False, indent=1)
+    except Exception as e:
+        log_skip("RDB履歴保存", f"書き込みエラー ({e})")
+
+
+def update_rdb_history(history, city, shops):
+    """本日時点のポイント・レビュー数を履歴として記録し、直近の記録との
+    差分（前回比）を実データとして計算する。過去の記録が無い店舗は
+    「本日が初回記録」と正直に示し、存在しない過去の推移を作らない。"""
+    today_str = datetime.date.today().isoformat()
+    city_hist = history.setdefault(city, {})
+    for s in shops:
+        shop_hist = city_hist.setdefault(s["shop"], {"snapshots": []})
+        snaps = shop_hist["snapshots"]
+        if not snaps or snaps[-1]["date"] != today_str:
+            snaps.append({"date": today_str, "point": s["point"], "reviews": s["reviews"]})
+            snaps[:] = snaps[-30:]  # 直近30回分のみ保持
+        if len(snaps) >= 2:
+            prev = snaps[-2]
+            try:
+                delta_pt = round(float(s["point"]) - float(prev["point"]), 2)
+                delta_rv = int(s["reviews"]) - int(prev["reviews"]) if s["reviews"].isdigit() and prev["reviews"].isdigit() else None
+                s["delta_pt"] = delta_pt
+                s["delta_rv"] = delta_rv
+                s["since"] = prev["date"]
+            except (ValueError, TypeError):
+                pass
+    return history
+
+
+def render_ramen_db_section():
+    history = load_rdb_history()
+    blocks = []
+    for city in RAMEN_DB_CITIES:
+        shops = fetch_ramen_db(city)
+        if shops:
+            history = update_rdb_history(history, city, shops)
+            rows = "".join(f"""
+        <a class="rdb-row" href="{esc_x(s['link'])}" target="_blank" rel="noopener">
+          <span class="rdb-shop">{esc_x(s['shop'])}</span>
+          <span class="rdb-point">{esc_x(s['point'])}pt{f" ({'+' if s.get('delta_pt', 0) >= 0 else ''}{s['delta_pt']})" if 'delta_pt' in s else ""}</span>
+          <span class="rdb-reviews">{esc_x(s['reviews'])}レビュー{f" ({'+' if (s.get('delta_rv') or 0) >= 0 else ''}{s['delta_rv']})" if s.get('delta_rv') is not None else ""}</span>
+        </a>""" for s in shops)
+        else:
+            rows = "<p class='empty'>該当店舗を取得できませんでした。</p>"
+        blocks.append(f"<div class='info-city-block'><h4>{city}（現時点のポイント順・上位5件）</h4><div class='rdb-list'>{rows}</div></div>")
+    save_rdb_history(history)
+    return f"""
+  <details class="block accordion">
+    <summary>🍜 ラーメンデータベース ランキング（前回取得比つき）</summary>
+    {"".join(blocks)}
+  </details>"""
 
 
 def render_shopping_section():
@@ -1539,6 +1647,11 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .cinema-film-accordion summary::-webkit-details-marker {{ display: none; }}
   .cinema-day-row {{ display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 6px 0; border-top: 1px solid var(--rule); }}
   .cinema-day-date {{ color: var(--ink-soft); white-space: nowrap; }}
+  .rdb-list {{ display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }}
+  .rdb-row {{ display: flex; align-items: center; gap: 10px; min-height: 44px; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; text-decoration: none; color: var(--ink); font-size: 13px; }}
+  .rdb-shop {{ flex: 1; }}
+  .rdb-point {{ color: #ffb347; font-weight: 700; font-size: 12px; }}
+  .rdb-reviews {{ color: var(--ink-soft); font-size: 11px; }}
   .lifeline-alert {{ background: rgba(226,60,50,0.22); border: 2px solid #ff3b30; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }}
   .lifeline-ok {{ font-size: 13px; color: var(--store); }}
   .rt-timeline {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}
@@ -1596,6 +1709,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     {topics_html}
   </section>
 {render_shopping_section()}
+{render_ramen_db_section()}
 {render_medical_gomi_section()}
 {render_events_section(topics)}
 {render_x_widget_section(x_posts)}
