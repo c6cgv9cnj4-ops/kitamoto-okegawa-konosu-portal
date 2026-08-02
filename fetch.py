@@ -332,8 +332,16 @@ X_HASHTAGS = {"北本市": "北本市", "桶川市": "桶川市", "鴻巣市": "
 YAHOO_RT_KEYWORDS = ("火事", "火災", "出火", "事故", "事件", "不審者", "通行止め",
                      "停電", "遅延", "運転見合わせ", "運休", "震度", "地震", "避難", "警報",
                      "逮捕", "強盗", "暴行", "傷害", "特殊詐欺", "ひき逃げ", "行方不明",
-                     "土砂災害", "浸水", "竜巻", "落雷")
+                     "土砂災害", "浸水", "竜巻", "落雷",
+                     # ここから地域の日常トピック（防犯・防災以外も幅広く拾う）
+                     "オープン", "開店", "閉店", "新装", "グランドオープン", "リニューアル",
+                     "まつり", "祭", "フェス", "イベント", "花火", "桜", "紅葉",
+                     "グルメ", "ランチ", "カフェ", "食べ", "出没", "話題")
+# 明らかな迷惑投稿・陰謀論・個人的な呼びかけは、キーワード一致有無に関わらず除外する
+YAHOO_RT_NOISE_PATTERNS = ("集団ストーカー", "スピリチュアル", "都市伝説", "洗脳",
+                           "暇つぶし付き合", "出会い希望", "副業", "在宅ワーク", "稼げる")
 YAHOO_RT_RECENT_DAYS = 3
+YAHOO_RT_TARGET_MIN = 3  # この件数に満たない場合のみ、キーワード不問のフォールバックを行う
 
 
 def parse_yahoo_relative_time(text):
@@ -391,47 +399,67 @@ def dedup_key_for_post(body):
 
 def fetch_yahoo_realtime_search(city):
     """Yahoo!リアルタイム検索（X由来データのライセンス提供ページ）から、
-    「{city}」を含む投稿を実際に取得する。キーワードでの厳格フィルタと
-    直近{YAHOO_RT_RECENT_DAYS}日以内のみに絞り、雑談・広告・陰謀論等の
-    無関係な投稿は採用しない。"""
+    「{city}」を含む投稿を実際に取得する。
+    まず防犯・防災・鉄道・地震＋地域トピックのキーワードに一致する投稿を
+    優先採用する。それだけでは{YAHOO_RT_TARGET_MIN}件に満たない場合のみ、
+    キーワード不問で直近の投稿を補うフォールバックを行うが、その場合も
+    明らかな迷惑投稿・陰謀論（YAHOO_RT_NOISE_PATTERNS）は除外する。"""
     name = f"Yahoo!リアルタイム検索［{city}］"
-    items = []
+    matched, fallback_candidates = [], []
+    seen = set()
     url = "https://search.yahoo.co.jp/realtime/search?p=" + urllib.parse.quote(city)
     try:
         r = requests.get(url, headers=HEADERS, timeout=10)
         r.encoding = "utf-8"
         soup = BeautifulSoup(r.text, "html.parser")
         tweets = soup.select('[class*="Tweet_Tweet__"]')
-        seen = set()
         now = datetime.datetime.now()
         for t in tweets:
             body_el = t.select_one('[class*="Tweet_body__"]')
             if not body_el:
                 continue
             body = body_el.get_text(" ", strip=True)
-            if not any(k in body for k in YAHOO_RT_KEYWORDS):
-                continue  # 防犯・防災・鉄道・地震に無関係な投稿は採用しない
+            if any(p in body for p in YAHOO_RT_NOISE_PATTERNS):
+                continue  # 迷惑投稿・陰謀論はキーワード一致有無に関わらず除外
             time_el = t.select_one('[class*="Tweet_time__"]')
             time_text = time_el.get_text(strip=True) if time_el else ""
             dt = parse_yahoo_relative_time(time_text)
             if dt is None or (now - dt).days > YAHOO_RT_RECENT_DAYS:
                 continue
-            author_el = t.select_one('[class*="Tweet_authorName__"]')
-            author = author_el.get_text(strip=True) if author_el else "投稿者不明"
             dedup_key = dedup_key_for_post(body)
             if not dedup_key or dedup_key in seen:
                 continue
-            seen.add(dedup_key)
-            items.append({
+            author_el = t.select_one('[class*="Tweet_authorName__"]')
+            author = author_el.get_text(strip=True) if author_el else "投稿者不明"
+            entry = {
                 "city": city, "author": author, "body": body[:160],
                 "time_text": time_text, "link": url,
-            })
-            if len(items) >= 5:
+            }
+            if any(k in body for k in YAHOO_RT_KEYWORDS):
+                seen.add(dedup_key)
+                matched.append(entry)
+            else:
+                fallback_candidates.append((dedup_key, entry))
+            if len(matched) >= 5:
                 break
     except Exception as e:
         log_skip(name, f"取得エラー ({e})")
+        return []
+
+    items = matched
+    if len(items) < YAHOO_RT_TARGET_MIN:
+        for dedup_key, entry in fallback_candidates:
+            if len(items) >= YAHOO_RT_TARGET_MIN:
+                break
+            if dedup_key in seen:
+                continue
+            seen.add(dedup_key)
+            items.append(entry)
+        if len(items) > len(matched):
+            log_skip(name, f"キーワード一致が{len(matched)}件のみだったため、直近の投稿（迷惑投稿除く）で{len(items)}件まで補完")
+
     if not items:
-        log_skip(name, "関連キーワードに一致する投稿なし（ノイズ除外フィルタが正常に機能している状態）")
+        log_skip(name, "該当する投稿なし（迷惑投稿除外後もゼロ件）")
     return items
 
 
