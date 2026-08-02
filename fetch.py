@@ -285,14 +285,32 @@ def render_x_widget_section():
         🔗 #{esc_x(tag)} をXで検索
       </a>""" for tag in X_HASHTAGS.values())
     return f"""
-  <section class="block">
-    <h2>⑤ X（旧Twitter）で検索</h2>
+  <details class="block accordion">
+    <summary>⑤ X（旧Twitter）で検索</summary>
     <p class="disclaimer">X公式のハッシュタグ埋め込みタイムラインは実機検証の結果、
       X側の仕様変更により正常に描画されないことを確認したため廃止しました
       （中身が空のまま表示され続ける状態を「動いている」と偽ることはしません）。
       代わりに、タップすると実際のX検索結果に飛べる外部リンクにしています。</p>
     <div class="x-link-grid">{buttons}</div>
-  </section>"""
+  </details>"""
+
+
+UPDATE_INTERVAL_NOTE = "15分おき（GitHub Actions cron: 3,18,33,48 * * * *）"
+REPO_ACTIONS_URL = "https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions"
+
+
+def render_system_status_section(now_jst_str):
+    return f"""
+  <details class="block accordion">
+    <summary>⚙️ システム状態・自動更新について</summary>
+    <ul class="system-status-list">
+      <li>このページの生成時刻（JST）: {now_jst_str}</li>
+      <li>自動更新間隔: {UPDATE_INTERVAL_NOTE}</li>
+      <li>実行環境: GitHub Actions（Macの電源・スリープに依存しない）</li>
+      <li>実行履歴の確認: <a href="{REPO_ACTIONS_URL}" target="_blank" rel="noopener">{REPO_ACTIONS_URL}</a></li>
+      <li>変更が無い回はコミットされません（「Yahoo!路線情報」等の更新時刻が同じままなら、実際にデータ側が変化していないだけで自動更新自体は動いています）</li>
+    </ul>
+  </details>"""
 
 
 def esc_x(value):
@@ -410,6 +428,45 @@ def fetch_earthquake_info():
     return items
 
 
+RECENT_ALERT_DAYS = 7  # 「本日〜直近数日以内のみ」という要件のため、防犯防災アラート・地域トピックとも直近7日以内のみを対象にする
+
+
+def normalize_title_for_dedup(title):
+    """重複判定用にタイトルを正規化する。同一ニュースがGoogle News等で
+    「－ 媒体名」「｜媒体名」「（媒体名）」といった表記ゆれ違いの複数記事として
+    重複掲載されるのを防ぐため、末尾の媒体名表記を除去してから比較する。"""
+    t = title
+    t = re.sub(r'\s*[-－―｜|]\s*[^\-－―｜|]{1,24}$', '', t)
+    t = re.sub(r'[（(][^（）()]{1,20}[）)]\s*$', '', t)
+    t = re.sub(r'[\s　]+', '', t)
+    return t[:36]
+
+
+def dedup_and_filter_recent(items, days):
+    """タイトルの重複を排除し、直近days日以内に日付が確認できたものだけを残す。
+    日付が確認できないものは「最新のみ」という要件を満たせないため対象外にする
+    （表示継続の方向に倒すのではなく、ここでは正直に除外する）。"""
+    now = datetime.datetime.now()
+    seen = set()
+    result = []
+    for item in items:
+        sort_key = item.get("sort_key", "")
+        if not sort_key:
+            continue
+        try:
+            dt = datetime.datetime.fromisoformat(sort_key)
+        except ValueError:
+            continue
+        if (now - dt).days > days or dt > now + datetime.timedelta(days=1):
+            continue
+        dedup_key = normalize_title_for_dedup(item["title"])
+        if not dedup_key or dedup_key in seen:
+            continue
+        seen.add(dedup_key)
+        result.append(item)
+    return result
+
+
 def build_dataset():
     alerts = []
     topics = []
@@ -444,7 +501,16 @@ def build_dataset():
         alerts += fetch_google_news_local(city, "alert")
         topics += fetch_google_news_local(city, "trend")
 
+    alerts = dedup_and_filter_recent(alerts, RECENT_ALERT_DAYS)
+    topics = dedup_and_filter_recent(topics, RECENT_ALERT_DAYS)
+
+    FIRE_KEYWORDS = ("火事", "火災", "出火", "全焼", "半焼", "ぼや")
+    for a in alerts:
+        a["is_fire"] = any(k in a["title"] for k in FIRE_KEYWORDS)
+
+    # 新しい順に並べたうえで、火災関連のみ最優先で先頭に引き上げる（安定ソートを利用）
     alerts.sort(key=lambda x: x["sort_key"], reverse=True)
+    alerts.sort(key=lambda x: x["is_fire"], reverse=True)
     topics.sort(key=lambda x: x["sort_key"], reverse=True)
 
     train_status = fetch_train_status()
@@ -460,12 +526,15 @@ def render_item_row(item, extra_class=""):
     link = item["link"]
     source = item["source"]
     location = item.get("location", "")
+    is_fire = item.get("is_fire", False)
     cat_class = "cat-store" if cat_badge == "新店舗・開閉店" else ("cat-topic" if cat_badge == "地域トピック" else "cat-alert")
+    fire_class = " item-fire" if is_fire else ""
+    fire_prefix = "🔥 " if is_fire else ""
     return f"""
-    <a class="item {extra_class}" data-city="{city_badge}" href="{link}" target="_blank" rel="noopener">
+    <a class="item {extra_class}{fire_class}" data-city="{city_badge}" href="{link}" target="_blank" rel="noopener">
       <span class="badge city-badge">{city_badge}</span>
       <span class="badge {cat_class}">{cat_badge}</span>
-      <span class="item-title">{title}</span>
+      <span class="item-title">{fire_prefix}{title}</span>
       <span class="loc-badge">{location}</span>
       <span class="item-meta">{date_disp}｜{source}</span>
     </a>"""
@@ -502,7 +571,8 @@ def render_earthquake_section(earthquakes):
 
 
 def render_html(alerts, topics, train_status, earthquakes, skip_log):
-    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    JST = datetime.timezone(datetime.timedelta(hours=9))
+    now_str = datetime.datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
 
     alert_rows = "".join(render_item_row(a) for a in alerts) if alerts else "<p class='empty'>現在、取得できた防犯・防災情報はありません。</p>"
 
@@ -593,6 +663,12 @@ def render_html(alerts, topics, train_status, earthquakes, skip_log):
   }}
   .city-badge {{ background: #232a35; color: var(--ink-soft); }}
   .cat-alert {{ background: rgba(226,102,90,0.18); color: var(--alert); }}
+  a.item.item-fire {{
+    background: rgba(226,60,50,0.22);
+    border: 2px solid #ff3b30;
+    box-shadow: 0 0 14px rgba(255,59,48,0.35);
+  }}
+  a.item.item-fire .item-title {{ font-weight: 700; color: #ffd7d2; }}
   .cat-store {{ background: rgba(79,176,138,0.18); color: var(--store); }}
   .cat-topic {{ background: rgba(201,162,75,0.18); color: var(--topic); }}
   .item-title {{ font-size: 14px; }}
@@ -627,6 +703,14 @@ def render_html(alerts, topics, train_status, earthquakes, skip_log):
   .eq-meta {{ font-size: 10.5px; color: var(--ink-soft); }}
   .unverified-tag {{ font-size: 11px; font-weight: 700; color: var(--alert); border: 1px solid var(--alert); border-radius: 6px; padding: 2px 8px; vertical-align: middle; margin-left: 8px; }}
   .disclaimer {{ font-size: 12.5px; color: var(--ink-soft); background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }}
+  details.accordion {{ background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 10px; padding: 4px 16px; }}
+  details.accordion summary {{ cursor: pointer; font-size: 18px; padding: 10px 0; list-style: none; }}
+  details.accordion summary::-webkit-details-marker {{ display: none; }}
+  details.accordion summary::before {{ content: "▶ "; display: inline-block; transition: transform 0.15s; }}
+  details.accordion[open] summary::before {{ transform: rotate(90deg); }}
+  details.accordion .disclaimer, details.accordion .x-link-grid, details.accordion .system-status-list {{ margin-bottom: 14px; }}
+  .system-status-list {{ font-size: 12.5px; color: var(--ink-soft); line-height: 1.9; padding-left: 18px; }}
+  .system-status-list a {{ color: var(--accent); }}
   .x-link-grid {{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }}
   .x-search-btn {{ background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-size: 13px; text-decoration: none; font-weight: 700; }}
   .x-search-btn:hover {{ background: var(--accent); color: #0c1116; }}
@@ -674,12 +758,14 @@ def render_html(alerts, topics, train_status, earthquakes, skip_log):
     {topics_html}
   </section>
 {render_x_widget_section()}
+{render_system_status_section(now_str)}
 
   <footer>
     データ取得状況（スキップログ）:
     <ul>{skip_html}</ul>
     <p>※ 消防出動情報はライブ配信元がJavaScript動的読み込みのため、静的スクレイピングでは取得できず、消防本部の公式お知らせを代替表示しています。</p>
     <p>※ 北本市・桶川市・鴻巣市の公式サイトはJSタブ構造のため新着情報を直接取得できず、Google Newsの検索結果（直近{GOOGLE_NEWS_RECENT_DAYS}日以内のみ）で代替しています。NHK埼玉のRSS配信は廃止済みのため対象外です。</p>
+    <p>※ 防犯・防災アラート／地域トピックは、同一ニュースの重複掲載を除去したうえで、直近{RECENT_ALERT_DAYS}日以内に日付が確認できたもののみを表示しています（日付が確認できない情報は「最新のみ」の要件を満たせないため対象外にしています）。</p>
   </footer>
 </div>
 
