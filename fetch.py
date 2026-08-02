@@ -744,12 +744,14 @@ def render_item_row(item, extra_class=""):
     summary_html = f"<span class='item-summary'>{summary}</span>" if summary else ""
     return f"""
     <a class="item {extra_class}{fire_class}" data-city="{city_badge}" href="{link}" target="_blank" rel="noopener">
-      <span class="badge city-badge">{city_badge}</span>
-      <span class="badge {cat_class}">{cat_badge}</span>
-      <span class="item-title">{icon_prefix}{title}</span>
+      <div class="item-badges">
+        <span class="badge city-badge">{city_badge}</span>
+        <span class="badge {cat_class}">{cat_badge}</span>
+        <span class="item-meta">{date_disp}｜{source}</span>
+      </div>
+      <div class="item-title">{icon_prefix}{title}</div>
       {summary_html}
-      <span class="loc-badge">{location}</span>
-      <span class="item-meta">{date_disp}｜{source}</span>
+      <div class="loc-badge">{location}</div>
     </a>"""
 
 
@@ -828,10 +830,10 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
     line-height: 1.7;
   }}
-  .page {{ max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }}
+  .page {{ max-width: 860px; margin: 0 auto; padding: 24px 16px 56px; overflow-x: hidden; }}
   header.top {{ margin-bottom: 20px; }}
-  header.top h1 {{ font-size: 26px; margin: 0 0 6px; }}
-  header.top .meta {{ color: var(--ink-soft); font-size: 13px; }}
+  header.top h1 {{ font-size: 22px; margin: 0 0 6px; line-height: 1.3; }}
+  header.top .meta {{ color: var(--ink-soft); font-size: 12.5px; }}
 
   .tabs {{ display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }}
   .tab-btn {{
@@ -839,7 +841,8 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     color: var(--ink);
     border: 1px solid var(--rule);
     border-radius: 999px;
-    padding: 8px 16px;
+    padding: 11px 18px;
+    min-height: 44px;
     font-size: 14px;
     cursor: pointer;
   }}
@@ -853,24 +856,28 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     margin-bottom: 12px;
   }}
 
-  .item-list {{ display: flex; flex-direction: column; gap: 8px; }}
+  /* モバイルファースト: まずスマホ幅を基準にしたflexレイアウトを定義し、
+     広い画面ではメディアクエリで補助的に調整する（スマホでバッジが縦に
+     間延びする問題を避けるため、badge類は横並びのグループにまとめている） */
+  .item-list {{ display: flex; flex-direction: column; gap: 10px; }}
   a.item {{
-    display: grid;
-    grid-template-columns: auto auto 1fr auto auto;
-    align-items: center;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     background: var(--bg-raised);
     border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 10px;
+    padding: 14px 16px;
     text-decoration: none;
     color: var(--ink);
+    min-height: 44px;
   }}
   a.item:hover {{ border-color: var(--accent); }}
+  .item-badges {{ display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }}
   .badge {{
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
-    padding: 3px 8px;
+    padding: 4px 9px;
     border-radius: 6px;
     white-space: nowrap;
   }}
@@ -884,18 +891,19 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   a.item.item-fire .item-title {{ font-weight: 700; color: #ffd7d2; }}
   .cat-store {{ background: rgba(79,176,138,0.18); color: var(--store); }}
   .cat-topic {{ background: rgba(201,162,75,0.18); color: var(--topic); }}
-  .item-title {{ font-size: 14px; }}
-  .item-summary {{ grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-soft); margin: -2px 0 2px; }}
+  .item-title {{ font-size: 15px; line-height: 1.55; }}
+  .item-summary {{ font-size: 13px; line-height: 1.55; color: var(--ink-soft); }}
   .loc-badge {{
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
-    padding: 3px 8px;
+    padding: 4px 9px;
     border-radius: 6px;
     background: #2a2a2a;
     color: #00adb5;
     white-space: nowrap;
+    align-self: flex-start;
   }}
-  .item-meta {{ font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }}
+  .item-meta {{ font-size: 11.5px; color: var(--ink-soft); margin-left: auto; }}
   .empty {{ color: var(--ink-soft); font-size: 13.5px; }}
 
   .topic-city-block h3 {{ font-size: 15px; color: var(--ink-soft); margin: 16px 0 8px; }}
@@ -918,7 +926,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .unverified-tag {{ font-size: 11px; font-weight: 700; color: var(--alert); border: 1px solid var(--alert); border-radius: 6px; padding: 2px 8px; vertical-align: middle; margin-left: 8px; }}
   .disclaimer {{ font-size: 12.5px; color: var(--ink-soft); background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }}
   details.accordion {{ background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 10px; padding: 4px 16px; }}
-  details.accordion summary {{ cursor: pointer; font-size: 18px; padding: 10px 0; list-style: none; }}
+  details.accordion summary {{ cursor: pointer; font-size: 17px; padding: 14px 0; min-height: 44px; display: flex; align-items: center; list-style: none; }}
   details.accordion summary::-webkit-details-marker {{ display: none; }}
   details.accordion summary::before {{ content: "▶ "; display: inline-block; transition: transform 0.15s; }}
   details.accordion[open] summary::before {{ transform: rotate(90deg); }}
@@ -934,15 +942,15 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .rt-post-time {{ margin-left: auto; }}
   .rt-post-body {{ font-size: 13px; line-height: 1.6; }}
   .x-link-grid {{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }}
-  .x-search-btn {{ background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-size: 13px; text-decoration: none; font-weight: 700; }}
+  .x-search-btn {{ background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 12px 18px; min-height: 44px; display: inline-flex; align-items: center; font-size: 13.5px; text-decoration: none; font-weight: 700; }}
   .x-search-btn:hover {{ background: var(--accent); color: #0c1116; }}
 
   footer {{ border-top: 1px solid var(--rule); padding-top: 14px; font-size: 12px; color: var(--ink-soft); }}
   footer ul {{ margin: 6px 0 0; padding-left: 18px; }}
 
-  @media (max-width: 560px) {{
-    a.item {{ grid-template-columns: 1fr; }}
-    .item-meta, .loc-badge {{ white-space: normal; justify-self: start; }}
+  /* 広い画面向けの補助調整（モバイルはここに依存せず単体で成立させている） */
+  @media (min-width: 640px) {{
+    .item-badges {{ flex-wrap: nowrap; }}
   }}
 </style>
 </head>

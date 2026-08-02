@@ -24,10 +24,10 @@
     font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
     line-height: 1.7;
   }
-  .page { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+  .page { max-width: 860px; margin: 0 auto; padding: 24px 16px 56px; overflow-x: hidden; }
   header.top { margin-bottom: 20px; }
-  header.top h1 { font-size: 26px; margin: 0 0 6px; }
-  header.top .meta { color: var(--ink-soft); font-size: 13px; }
+  header.top h1 { font-size: 22px; margin: 0 0 6px; line-height: 1.3; }
+  header.top .meta { color: var(--ink-soft); font-size: 12.5px; }
 
   .tabs { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }
   .tab-btn {
@@ -35,7 +35,8 @@
     color: var(--ink);
     border: 1px solid var(--rule);
     border-radius: 999px;
-    padding: 8px 16px;
+    padding: 11px 18px;
+    min-height: 44px;
     font-size: 14px;
     cursor: pointer;
   }
@@ -49,24 +50,28 @@
     margin-bottom: 12px;
   }
 
-  .item-list { display: flex; flex-direction: column; gap: 8px; }
+  /* モバイルファースト: まずスマホ幅を基準にしたflexレイアウトを定義し、
+     広い画面ではメディアクエリで補助的に調整する（スマホでバッジが縦に
+     間延びする問題を避けるため、badge類は横並びのグループにまとめている） */
+  .item-list { display: flex; flex-direction: column; gap: 10px; }
   a.item {
-    display: grid;
-    grid-template-columns: auto auto 1fr auto auto;
-    align-items: center;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     background: var(--bg-raised);
     border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 10px;
+    padding: 14px 16px;
     text-decoration: none;
     color: var(--ink);
+    min-height: 44px;
   }
   a.item:hover { border-color: var(--accent); }
+  .item-badges { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
   .badge {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
-    padding: 3px 8px;
+    padding: 4px 9px;
     border-radius: 6px;
     white-space: nowrap;
   }
@@ -80,18 +85,19 @@
   a.item.item-fire .item-title { font-weight: 700; color: #ffd7d2; }
   .cat-store { background: rgba(79,176,138,0.18); color: var(--store); }
   .cat-topic { background: rgba(201,162,75,0.18); color: var(--topic); }
-  .item-title { font-size: 14px; }
-  .item-summary { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-soft); margin: -2px 0 2px; }
+  .item-title { font-size: 15px; line-height: 1.55; }
+  .item-summary { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
   .loc-badge {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
-    padding: 3px 8px;
+    padding: 4px 9px;
     border-radius: 6px;
     background: #2a2a2a;
     color: #00adb5;
     white-space: nowrap;
+    align-self: flex-start;
   }
-  .item-meta { font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
+  .item-meta { font-size: 11.5px; color: var(--ink-soft); margin-left: auto; }
   .empty { color: var(--ink-soft); font-size: 13.5px; }
 
   .topic-city-block h3 { font-size: 15px; color: var(--ink-soft); margin: 16px 0 8px; }
@@ -114,7 +120,7 @@
   .unverified-tag { font-size: 11px; font-weight: 700; color: var(--alert); border: 1px solid var(--alert); border-radius: 6px; padding: 2px 8px; vertical-align: middle; margin-left: 8px; }
   .disclaimer { font-size: 12.5px; color: var(--ink-soft); background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
   details.accordion { background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 10px; padding: 4px 16px; }
-  details.accordion summary { cursor: pointer; font-size: 18px; padding: 10px 0; list-style: none; }
+  details.accordion summary { cursor: pointer; font-size: 17px; padding: 14px 0; min-height: 44px; display: flex; align-items: center; list-style: none; }
   details.accordion summary::-webkit-details-marker { display: none; }
   details.accordion summary::before { content: "▶ "; display: inline-block; transition: transform 0.15s; }
   details.accordion[open] summary::before { transform: rotate(90deg); }
@@ -130,15 +136,15 @@
   .rt-post-time { margin-left: auto; }
   .rt-post-body { font-size: 13px; line-height: 1.6; }
   .x-link-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-  .x-search-btn { background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-size: 13px; text-decoration: none; font-weight: 700; }
+  .x-search-btn { background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 12px 18px; min-height: 44px; display: inline-flex; align-items: center; font-size: 13.5px; text-decoration: none; font-weight: 700; }
   .x-search-btn:hover { background: var(--accent); color: #0c1116; }
 
   footer { border-top: 1px solid var(--rule); padding-top: 14px; font-size: 12px; color: var(--ink-soft); }
   footer ul { margin: 6px 0 0; padding-left: 18px; }
 
-  @media (max-width: 560px) {
-    a.item { grid-template-columns: 1fr; }
-    .item-meta, .loc-badge { white-space: normal; justify-self: start; }
+  /* 広い画面向けの補助調整（モバイルはここに依存せず単体で成立させている） */
+  @media (min-width: 640px) {
+    .item-badges { flex-wrap: nowrap; }
   }
 </style>
 </head>
@@ -146,7 +152,7 @@
 <div class="page">
   <header class="top">
     <h1>近隣3市 地域ポータル</h1>
-    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-02 21:10 JST</div>
+    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-02 21:16 JST</div>
   </header>
 
   <section class="block">
@@ -156,25 +162,25 @@
         <div class="train-line">JR高崎線</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月2日 21時10分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 21時16分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/46/46" target="_blank" rel="noopener">
         <div class="train-line">JR宇都宮線</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月2日 21時10分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 21時16分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/25/0" target="_blank" rel="noopener">
         <div class="train-line">JR湘南新宿ライン</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">20:50現在、ほぼ平常通り運転しています。（8月2日 20時50分掲載）</div>
-        <div class="train-updated">8月2日 21時10分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 21時16分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/627/0" target="_blank" rel="noopener">
         <div class="train-line">JR上野東京ライン</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月2日 21時10分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 21時16分更新｜Yahoo!路線情報</div>
       </a></div>
   </section>
 
@@ -194,68 +200,84 @@
     <h2>③ 緊急・防犯防災アラート</h2>
     <div class="item-list" id="alert-list">
     <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE9nZ0VsaGRlRGNUTnhjM2tSeUd4WWNOXzZ2dy1QUGo0dUFBS05oN25kWUs5NWs4SnVsWTJCVzA3b0d2U0N1SkJtbHlPQ3FSeWM3UUZ3UkdQSWZtWGtsRWt4NGNNTTd3LXUxb29kMEVLbW1kZUR6ZGx3Mm1wdF9oM2c?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">北本市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">🚨 「死にたい？」などと脅し…10代女性に性的暴行加えようとケガさせたか 32歳の男逮捕（日テレNEWS NNN）</span>
+      <div class="item-badges">
+        <span class="badge city-badge">北本市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">2026-07-31｜Google News</span>
+      </div>
+      <div class="item-title">🚨 「死にたい？」などと脅し…10代女性に性的暴行加えようとケガさせたか 32歳の男逮捕（日テレNEWS NNN）</div>
       
-      <span class="loc-badge">📍 北本市エリア</span>
-      <span class="item-meta">2026-07-31｜Google News</span>
+      <div class="loc-badge">📍 北本市エリア</div>
     </a>
     <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/2026jidouonseikaisi.html" target="_blank" rel="noopener">
-      <span class="badge city-badge">鴻巣市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">📌 警察署代表電話への音声応答転送装置の導入について</span>
+      <div class="item-badges">
+        <span class="badge city-badge">鴻巣市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">7月31日｜鴻巣警察署 新着情報</span>
+      </div>
+      <div class="item-title">📌 警察署代表電話への音声応答転送装置の導入について</div>
       
-      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
-      <span class="item-meta">7月31日｜鴻巣警察署 新着情報</span>
+      <div class="loc-badge">📍 鴻巣警察署 新着情報管内</div>
     </a>
     <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080723.html" target="_blank" rel="noopener">
-      <span class="badge city-badge">鴻巣市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">⚠️ 特殊詐欺予兆電話情報（7月23日分）家電量販店騙りの詐欺電話が急増！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">鴻巣市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">7月30日｜鴻巣警察署 新着情報</span>
+      </div>
+      <div class="item-title">⚠️ 特殊詐欺予兆電話情報（7月23日分）家電量販店騙りの詐欺電話が急増！</div>
       
-      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
-      <span class="item-meta">7月30日｜鴻巣警察署 新着情報</span>
+      <div class="loc-badge">📍 鴻巣警察署 新着情報管内</div>
     </a>
     <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080724.html" target="_blank" rel="noopener">
-      <span class="badge city-badge">鴻巣市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">⚠️ 特殊詐欺予兆電話情報（7月24日から7月27日分）郵便局騙りの詐欺電話が急増！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">鴻巣市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">7月30日｜鴻巣警察署 新着情報</span>
+      </div>
+      <div class="item-title">⚠️ 特殊詐欺予兆電話情報（7月24日から7月27日分）郵便局騙りの詐欺電話が急増！</div>
       
-      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
-      <span class="item-meta">7月30日｜鴻巣警察署 新着情報</span>
+      <div class="loc-badge">📍 鴻巣警察署 新着情報管内</div>
     </a>
     <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMigwFBVV95cUxQQ0doZ1RyalJHS1RRSjlmVFFjY0tKOWpybGRlOVNCclVsZ2YzQ2tFdG9VNzRKa2hDSHppdWdNaEI3YXg1bEtjeEtIazl3eC1BRTJDLU94QzBRVG5La2tJNVljSW5CamE4UUVCRzl2eVVneW1jSk9DenVGQThCX0JUUVBza9IBiAFBVV95cUxPdk54XzQ2c09nZGppOFl6ZDZycS1VUE9vdUljdGVKV1ZDVlZGTWNkREJTQ1hhaDRPcldfTHo4NlZobEhiSHozMFoyRTVzQ1N2VVozbXY1endGeEg4bjRWckZSRmRCTU1XQmFWbXB6VE5UZmhjNFFleHQ2Z2dTbXNOODZpWDAwOGE1?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">北本市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">🚗 2人死亡…夏の交通安全運動期間中　いずれも日中の事故…ボーっとする可能性も、埼玉県警「暑さにも細心の注意を払って」　青切符制度の影響も…自転車の事故は前年比で減少</span>
+      <div class="item-badges">
+        <span class="badge city-badge">北本市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">2026-07-29｜Google News</span>
+      </div>
+      <div class="item-title">🚗 2人死亡…夏の交通安全運動期間中　いずれも日中の事故…ボーっとする可能性も、埼玉県警「暑さにも細心の注意を払って」　青切符制度の影響も…自転車の事故は前年比で減少</div>
       
-      <span class="loc-badge">📍 北本市エリア</span>
-      <span class="item-meta">2026-07-29｜Google News</span>
+      <div class="loc-badge">📍 北本市エリア</div>
     </a>
     <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMiZkFVX3lxTE9yNzVJeGE1ODlHNkxIbWlLRzVLQjZtX1dTZG0tOGJKNGtsa09lWG5HbFh5TnhHSGZZSEh2VDdrdU8yV3pCRlpqZXI3NTJBVzhKT0poYzJNMFB1bUxET0s2a2UzaFFxQQ?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">北本市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">🚨 性的暴行しようと…女性が引き込まれる 深夜の草むら、恐怖の5分間 襲った男逮捕、「死にたいか」と負傷させた疑い 母が通報 全治1カ月の女性、通話中の携帯を見せると…男が逃げていた「していません」｜埼玉新聞｜埼玉の最新ニュース・スポーツ・地域の話題</span>
+      <div class="item-badges">
+        <span class="badge city-badge">北本市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">2026-07-29｜Google News</span>
+      </div>
+      <div class="item-title">🚨 性的暴行しようと…女性が引き込まれる 深夜の草むら、恐怖の5分間 襲った男逮捕、「死にたいか」と負傷させた疑い 母が通報 全治1カ月の女性、通話中の携帯を見せると…男が逃げていた「していません」｜埼玉新聞｜埼玉の最新ニュース・スポーツ・地域の話題</div>
       
-      <span class="loc-badge">📍 北本市エリア</span>
-      <span class="item-meta">2026-07-29｜Google News</span>
+      <div class="loc-badge">📍 北本市エリア</div>
     </a>
     <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080721.html" target="_blank" rel="noopener">
-      <span class="badge city-badge">鴻巣市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">⚠️ 特殊詐欺予兆電話情報（7月21日分）オレオレ詐欺に注意！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">鴻巣市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">7月28日｜鴻巣警察署 新着情報</span>
+      </div>
+      <div class="item-title">⚠️ 特殊詐欺予兆電話情報（7月21日分）オレオレ詐欺に注意！</div>
       
-      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
-      <span class="item-meta">7月28日｜鴻巣警察署 新着情報</span>
+      <div class="loc-badge">📍 鴻巣警察署 新着情報管内</div>
     </a>
     <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/keikai080629.html" target="_blank" rel="noopener">
-      <span class="badge city-badge">鴻巣市</span>
-      <span class="badge cat-alert">防犯・防災</span>
-      <span class="item-title">🔓 警戒情報（令和8年6月29日～7月5日認知）</span>
+      <div class="item-badges">
+        <span class="badge city-badge">鴻巣市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">7月28日｜鴻巣警察署 新着情報</span>
+      </div>
+      <div class="item-title">🔓 警戒情報（令和8年6月29日～7月5日認知）</div>
       <span class='item-summary'>窃盗(自転車盗)：6月23日午前中から同日夜までの間、北本市北本一丁目地内で、駐輪場内にとめた自転車を盗まれる被害がありました。</span>
-      <span class="loc-badge">📍 北本市北本一丁目</span>
-      <span class="item-meta">7月28日｜鴻巣警察署 新着情報</span>
+      <div class="loc-badge">📍 北本市北本一丁目</div>
     </a></div>
   </section>
 
@@ -266,68 +288,82 @@
       <h3>北本市</h3>
       <div class="item-list">
     <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMia0FVX3lxTFA1b3dUVUI0SHU1VUhkOU9NYU1MVEtLZmVhU1JNLTNKUTkwMXB2RGdkUWozUkJhdU9wT0dPazkzWkRXRndJNDdlektaWWRKRnZreFYtRFNMaTBUVlc5UDhnYW5mZUhNS1FtTlY0?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">北本市</span>
-      <span class="badge cat-topic">地域トピック</span>
-      <span class="item-title">🎪 【北本市】ヘイワールド夏まつりが開催されます！！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">北本市</span>
+        <span class="badge cat-topic">地域トピック</span>
+        <span class="item-meta">2026-08-01｜Google News</span>
+      </div>
+      <div class="item-title">🎪 【北本市】ヘイワールド夏まつりが開催されます！！</div>
       
-      <span class="loc-badge">📍 北本市エリア</span>
-      <span class="item-meta">2026-08-01｜Google News</span>
+      <div class="loc-badge">📍 北本市エリア</div>
     </a></div>
     </section>
     <section class="topic-city-block" data-city="桶川市">
       <h3>桶川市</h3>
       <div class="item-list">
     <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE9xd0xqcXZXMkhGUlRLZ01jYVo4V2N1ZVBXV0ItaVZpcUdPcnVzX0RXSVE0ZlpjNXBDUFNBTUN1YlBrbllVbFVKYVo3VThQR216UTNmX051Y2MtWDg5eDJpa1p6NkFxM0JEdWc?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">桶川市</span>
-      <span class="badge cat-store">新店舗・開閉店</span>
-      <span class="item-title">🎉 【桶川市】「ドラッグストアセキ 上日出谷店」が店内改装のため休業中！リニューアルオープン日も分かりました！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">桶川市</span>
+        <span class="badge cat-store">新店舗・開閉店</span>
+        <span class="item-meta">2026-07-30｜Google News</span>
+      </div>
+      <div class="item-title">🎉 【桶川市】「ドラッグストアセキ 上日出谷店」が店内改装のため休業中！リニューアルオープン日も分かりました！</div>
       
-      <span class="loc-badge">📍 桶川市エリア</span>
-      <span class="item-meta">2026-07-30｜Google News</span>
+      <div class="loc-badge">📍 桶川市エリア</div>
     </a>
     <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE9WSzRSMzhFQ2ZFTHUtWS1DRnUwTC1OUk43TXBpeXpHUXNLQzJjTlQ1Qlh3SkRMdFNCY0hXX1VjUlM3ZDhxTmVvaE5KTXNMbXJ1clFBOHlIOWVWODJ0eVJLR09YZ2hZaHVDT0E?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">桶川市</span>
-      <span class="badge cat-store">新店舗・開閉店</span>
-      <span class="item-title">🔚 【桶川市】西にあるコインランドリーが閉店となることが分かりました！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">桶川市</span>
+        <span class="badge cat-store">新店舗・開閉店</span>
+        <span class="item-meta">2026-07-30｜Google News</span>
+      </div>
+      <div class="item-title">🔚 【桶川市】西にあるコインランドリーが閉店となることが分かりました！</div>
       
-      <span class="loc-badge">📍 桶川市エリア</span>
-      <span class="item-meta">2026-07-30｜Google News</span>
+      <div class="loc-badge">📍 桶川市エリア</div>
     </a>
     <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE11SzdtLXplQ0NGd0Q1bkt4bkdOTWZuZElhaFNndXg4M0FqcGVxMjhDZlhXZEdwQ3hnSl9Jd01ncktsTlhQdW1Xc2hOdHdZSjNSSjVDV0E1UWxoREJxUkI4UnNiNG96SDkybWc?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">桶川市</span>
-      <span class="badge cat-store">新店舗・開閉店</span>
-      <span class="item-title">🎉 【桶川市】デカ盛り唐揚げ専門店「キッチンバスストップ桶川店」がオープンすることが分かりました！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">桶川市</span>
+        <span class="badge cat-store">新店舗・開閉店</span>
+        <span class="item-meta">2026-07-29｜Google News</span>
+      </div>
+      <div class="item-title">🎉 【桶川市】デカ盛り唐揚げ専門店「キッチンバスストップ桶川店」がオープンすることが分かりました！</div>
       
-      <span class="loc-badge">📍 桶川市エリア</span>
-      <span class="item-meta">2026-07-29｜Google News</span>
+      <div class="loc-badge">📍 桶川市エリア</div>
     </a>
     <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTFBiWVVHbkZWMGphbHZLU1RoOWNocHc2VUFoSGVTLW1NUUgzMjZaNjRPaVB3ZUFBXzZfUlNPQUx4Y09kTjRsLV9Yclpsd3hxZHlFbDVNTkNqRVQzWE5TMExleDJVcDEzLTlDenc?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">桶川市</span>
-      <span class="badge cat-topic">地域トピック</span>
-      <span class="item-title">📍 【桶川市】大注目！どうぶつの森『しずえさん』がベニバナウォーク桶川に登場します！！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">桶川市</span>
+        <span class="badge cat-topic">地域トピック</span>
+        <span class="item-meta">2026-07-26｜Google News</span>
+      </div>
+      <div class="item-title">📍 【桶川市】大注目！どうぶつの森『しずえさん』がベニバナウォーク桶川に登場します！！</div>
       
-      <span class="loc-badge">📍 桶川市エリア</span>
-      <span class="item-meta">2026-07-26｜Google News</span>
+      <div class="loc-badge">📍 桶川市エリア</div>
     </a></div>
     </section>
     <section class="topic-city-block" data-city="鴻巣市">
       <h3>鴻巣市</h3>
       <div class="item-list">
     <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE54TDhxQU1SY08zQ0lBeE50X0F1YVVNMnMwNkZCbDZXOTlJYWlBbGlfeENGbml3aGEyUWt6emEyczZuZi04S2p5ajVQOXJ2aGlUWlZhNUxqcjBXSTFoajVOcVhXVnFfT2taQUE?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">鴻巣市</span>
-      <span class="badge cat-store">新店舗・開閉店</span>
-      <span class="item-title">🎉 【鴻巣市】「麺屋 ひな多」跡地に動きが？！新たなラーメン店がオープンするようです！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">鴻巣市</span>
+        <span class="badge cat-store">新店舗・開閉店</span>
+        <span class="item-meta">2026-08-01｜Google News</span>
+      </div>
+      <div class="item-title">🎉 【鴻巣市】「麺屋 ひな多」跡地に動きが？！新たなラーメン店がオープンするようです！</div>
       
-      <span class="loc-badge">📍 鴻巣市エリア</span>
-      <span class="item-meta">2026-08-01｜Google News</span>
+      <div class="loc-badge">📍 鴻巣市エリア</div>
     </a>
     <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE9vZjF1YkRaMjZ4THNkZW0yMmgtZTFWVnBfN3Y3Qk5nUVV3RkhWbEoyd1NzVFVIanUwakx4UzAtdGUzWW4ycG1BclM1NEREWGthbElpTXNSWTdCTGR4Z2l3UDliUGlGNnk3bEE?oc=5" target="_blank" rel="noopener">
-      <span class="badge city-badge">鴻巣市</span>
-      <span class="badge cat-store">新店舗・開閉店</span>
-      <span class="item-title">🔚 【鴻巣市】残念ながら「青山餃子房」が閉店となっていたことが分かりました！</span>
+      <div class="item-badges">
+        <span class="badge city-badge">鴻巣市</span>
+        <span class="badge cat-store">新店舗・開閉店</span>
+        <span class="item-meta">2026-07-31｜Google News</span>
+      </div>
+      <div class="item-title">🔚 【鴻巣市】残念ながら「青山餃子房」が閉店となっていたことが分かりました！</div>
       
-      <span class="loc-badge">📍 鴻巣市エリア</span>
-      <span class="item-meta">2026-07-31｜Google News</span>
+      <div class="loc-badge">📍 鴻巣市エリア</div>
     </a></div>
     </section>
   </section>
@@ -358,7 +394,7 @@
   <details class="block accordion">
     <summary>⚙️ システム状態・自動更新について</summary>
     <ul class="system-status-list">
-      <li>このページの生成時刻（JST）: 2026-08-02 21:10 JST</li>
+      <li>このページの生成時刻（JST）: 2026-08-02 21:16 JST</li>
       <li>自動更新間隔: 15分おき（GitHub Actions cron: 3,18,33,48 * * * *）</li>
       <li>実行環境: GitHub Actions（Macの電源・スリープに依存しない）</li>
       <li>実行履歴の確認: <a href="https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions" target="_blank" rel="noopener">https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions</a></li>
