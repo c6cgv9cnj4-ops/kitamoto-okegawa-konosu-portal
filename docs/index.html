@@ -90,11 +90,25 @@
   .topic-city-block h3 { font-size: 15px; color: var(--ink-soft); margin: 16px 0 8px; }
   .topic-city-block:first-child h3 { margin-top: 0; }
 
+  .train-grid, .eq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .train-card, .eq-card { display: block; border-radius: 8px; padding: 12px 14px; text-decoration: none; border: 1px solid var(--rule); }
+  .train-card.status-normal { background: rgba(79,176,138,0.12); border-color: var(--store); }
+  .train-card.status-normal .train-status { color: var(--store); font-weight: 700; }
+  .train-card.status-alert { background: rgba(226,102,90,0.14); border-color: var(--alert); }
+  .train-card.status-alert .train-status { color: var(--alert); font-weight: 700; }
+  .train-line { font-size: 13px; color: var(--ink-soft); }
+  .train-status { font-size: 16px; margin: 2px 0; }
+  .train-detail { font-size: 12px; color: var(--ink); }
+  .train-updated { font-size: 10.5px; color: var(--ink-soft); margin-top: 6px; }
+  .eq-card { background: rgba(226,102,90,0.08); border-color: var(--alert); color: var(--ink); }
+  .eq-title { font-size: 14px; font-weight: 700; color: var(--alert); }
+  .eq-detail { font-size: 12px; margin: 4px 0; }
+  .eq-meta { font-size: 10.5px; color: var(--ink-soft); }
   .unverified-tag { font-size: 11px; font-weight: 700; color: var(--alert); border: 1px solid var(--alert); border-radius: 6px; padding: 2px 8px; vertical-align: middle; margin-left: 8px; }
   .disclaimer { font-size: 12.5px; color: var(--ink-soft); background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
-  .x-widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 12px; }
-  .x-widget-card { background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; }
-  .x-widget-card h4 { margin: 0 0 8px; font-size: 14px; color: var(--accent); }
+  .x-link-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .x-search-btn { background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-size: 13px; text-decoration: none; font-weight: 700; }
+  .x-search-btn:hover { background: var(--accent); color: #0c1116; }
 
   footer { border-top: 1px solid var(--rule); padding-top: 14px; font-size: 12px; color: var(--ink-soft); }
   footer ul { margin: 6px 0 0; padding-left: 18px; }
@@ -109,8 +123,42 @@
 <div class="page">
   <header class="top">
     <h1>近隣3市 地域ポータル</h1>
-    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-02 11:05</div>
+    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-02 20:26</div>
   </header>
+
+  <section class="block">
+    <h2>① 鉄道運行情報（JR高崎線・宇都宮線・湘南新宿ライン・上野東京ライン）</h2>
+    <div class='train-grid'>
+      <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/48/0" target="_blank" rel="noopener">
+        <div class="train-line">JR高崎線</div>
+        <div class="train-status">平常運転</div>
+        <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
+        <div class="train-updated">8月2日 20時25分更新｜Yahoo!路線情報</div>
+      </a>
+      <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/46/46" target="_blank" rel="noopener">
+        <div class="train-line">JR宇都宮線</div>
+        <div class="train-status">平常運転</div>
+        <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
+        <div class="train-updated">8月2日 20時25分更新｜Yahoo!路線情報</div>
+      </a>
+      <a class="train-card status-alert" href="https://transit.yahoo.co.jp/diainfo/25/0" target="_blank" rel="noopener">
+        <div class="train-line">JR湘南新宿ライン</div>
+        <div class="train-status">列車遅延</div>
+        <div class="train-detail">保土ケ谷〜東戸塚駅間での信号関係点検の影響などで、一部列車に遅れが出ています。（8月2日 18時20分掲載）</div>
+        <div class="train-updated">8月2日 20時25分更新｜Yahoo!路線情報</div>
+      </a>
+      <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/627/0" target="_blank" rel="noopener">
+        <div class="train-line">JR上野東京ライン</div>
+        <div class="train-status">平常運転</div>
+        <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
+        <div class="train-updated">8月2日 20時25分更新｜Yahoo!路線情報</div>
+      </a></div>
+  </section>
+
+  <section class="block">
+    <h2>② 地震情報（埼玉県が対象に含まれるもののみ・気象庁XML）</h2>
+    <p class='empty'>直近72時間以内に埼玉県を含む地震情報はありません（気象庁XMLフィードで確認済み）。</p>
+  </section>
 
   <div class="tabs">
     <button class="tab-btn active" data-target="全体">全体</button>
@@ -120,7 +168,7 @@
   </div>
 
   <section class="block">
-    <h2>① 緊急・防犯防災アラート</h2>
+    <h2>③ 緊急・防犯防災アラート</h2>
     <div class="item-list" id="alert-list">
     <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE9nZ0VsaGRlRGNUTnhjM2tSeUd4WWNOXzZ2dy1QUGo0dUFBS05oN25kWUs5NWs4SnVsWTJCVzA3b0d2U0N1SkJtbHlPQ3FSeWM3UUZ3UkdQSWZtWGtsRWt4NGNNTTd3LXUxb29kMEVLbW1kZUR6ZGx3Mm1wdF9oM2c?oc=5" target="_blank" rel="noopener">
       <span class="badge city-badge">北本市</span>
@@ -426,7 +474,7 @@
   </section>
 
   <section class="block" id="topics-block">
-    <h2>② エリア新店舗・地域トピック</h2>
+    <h2>④ エリア新店舗・地域トピック</h2>
     
     <section class="topic-city-block" data-city="北本市">
       <h3>北本市</h3>
@@ -625,39 +673,26 @@
   </section>
 
   <section class="block">
-    <h2>③ X（旧Twitter）速報ウィジェット <span class="unverified-tag">動作保証外</span></h2>
-    <p class="disclaimer">X公式の埋め込み機能をそのまま設置しています。表示内容はX側が
-      その都度返すものであり、当方のスクリプトでは中身を取得・検証していません。
-      デマ・不確実な投稿が含まれる可能性がある点をご了承のうえご覧ください。
-      うまく表示されない場合はX側の仕様変更が原因の可能性があります。</p>
-    <div class="x-widget-grid">
-      <div class="x-widget-card">
-        <h4>#北本市</h4>
-        <a class="twitter-timeline" data-height="400" data-theme="dark"
-           href="https://twitter.com/search?q=%23%E5%8C%97%E6%9C%AC%E5%B8%82&src=typed_query">
-           #北本市 のポストを読み込み中…
-        </a>
-      </div>
-      <div class="x-widget-card">
-        <h4>#桶川市</h4>
-        <a class="twitter-timeline" data-height="400" data-theme="dark"
-           href="https://twitter.com/search?q=%23%E6%A1%B6%E5%B7%9D%E5%B8%82&src=typed_query">
-           #桶川市 のポストを読み込み中…
-        </a>
-      </div>
-      <div class="x-widget-card">
-        <h4>#鴻巣市</h4>
-        <a class="twitter-timeline" data-height="400" data-theme="dark"
-           href="https://twitter.com/search?q=%23%E9%B4%BB%E5%B7%A3%E5%B8%82&src=typed_query">
-           #鴻巣市 のポストを読み込み中…
-        </a>
-      </div></div>
+    <h2>⑤ X（旧Twitter）で検索</h2>
+    <p class="disclaimer">X公式のハッシュタグ埋め込みタイムラインは実機検証の結果、
+      X側の仕様変更により正常に描画されないことを確認したため廃止しました
+      （中身が空のまま表示され続ける状態を「動いている」と偽ることはしません）。
+      代わりに、タップすると実際のX検索結果に飛べる外部リンクにしています。</p>
+    <div class="x-link-grid">
+      <a class="x-search-btn" href="https://twitter.com/search?q=%23%E5%8C%97%E6%9C%AC%E5%B8%82&src=typed_query&f=live" target="_blank" rel="noopener">
+        🔗 #北本市 をXで検索
+      </a>
+      <a class="x-search-btn" href="https://twitter.com/search?q=%23%E6%A1%B6%E5%B7%9D%E5%B8%82&src=typed_query&f=live" target="_blank" rel="noopener">
+        🔗 #桶川市 をXで検索
+      </a>
+      <a class="x-search-btn" href="https://twitter.com/search?q=%23%E9%B4%BB%E5%B7%A3%E5%B8%82&src=typed_query&f=live" target="_blank" rel="noopener">
+        🔗 #鴻巣市 をXで検索
+      </a></div>
   </section>
-  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
   <footer>
     データ取得状況（スキップログ）:
-    <ul><li>なし（すべての情報源から正常に取得できました）</li></ul>
+    <ul><li>気象庁 地震情報: 直近72時間以内に埼玉県を含む地震情報なし（気象庁XMLフィードは正常に取得できています）</li></ul>
     <p>※ 消防出動情報はライブ配信元がJavaScript動的読み込みのため、静的スクレイピングでは取得できず、消防本部の公式お知らせを代替表示しています。</p>
     <p>※ 北本市・桶川市・鴻巣市の公式サイトはJSタブ構造のため新着情報を直接取得できず、Google Newsの検索結果（直近21日以内のみ）で代替しています。NHK埼玉のRSS配信は廃止済みのため対象外です。</p>
   </footer>

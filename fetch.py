@@ -274,32 +274,140 @@ X_HASHTAGS = {"北本市": "北本市", "桶川市": "桶川市", "鴻巣市": "
 
 
 def render_x_widget_section():
-    """X（旧Twitter）公式埋め込みウィジェットの設置。
-    ※ サーバー側では中身を取得・検証できない（X公式の埋め込みJSが
-    閲覧者のブラウザ上で都度読み込む方式のため）。表示される投稿の
-    信頼性・最新性はX側の仕様に依存し、当方では保証できない旨を明記する。"""
-    cards = "".join(f"""
-      <div class="x-widget-card">
-        <h4>#{tag}</h4>
-        <a class="twitter-timeline" data-height="400" data-theme="dark"
-           href="https://twitter.com/search?q=%23{urllib.parse.quote(tag)}&src=typed_query">
-           #{esc_x(tag)} のポストを読み込み中…
-        </a>
-      </div>""" for tag in X_HASHTAGS.values())
+    """X（旧Twitter）連携について。
+    公式埋め込みウィジェット（ハッシュタグ検索タイムライン）を実機で検証したところ、
+    X側の仕様変更により中身が描画されず「読み込み中」のまま止まることを確認した
+    （2026-08-02、GitHub Pages上の実ページ・widgets.jsのコンソールログで実際に
+    確認済み）。動かないものを動くように見せかけるのは誠実でないため、埋め込みは
+    廃止し、実際に機能する「Xで検索」への外部リンクに置き換える。"""
+    buttons = "".join(f"""
+      <a class="x-search-btn" href="https://twitter.com/search?q=%23{urllib.parse.quote(tag)}&src=typed_query&f=live" target="_blank" rel="noopener">
+        🔗 #{esc_x(tag)} をXで検索
+      </a>""" for tag in X_HASHTAGS.values())
     return f"""
   <section class="block">
-    <h2>③ X（旧Twitter）速報ウィジェット <span class="unverified-tag">動作保証外</span></h2>
-    <p class="disclaimer">X公式の埋め込み機能をそのまま設置しています。表示内容はX側が
-      その都度返すものであり、当方のスクリプトでは中身を取得・検証していません。
-      デマ・不確実な投稿が含まれる可能性がある点をご了承のうえご覧ください。
-      うまく表示されない場合はX側の仕様変更が原因の可能性があります。</p>
-    <div class="x-widget-grid">{cards}</div>
-  </section>
-  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>"""
+    <h2>⑤ X（旧Twitter）で検索</h2>
+    <p class="disclaimer">X公式のハッシュタグ埋め込みタイムラインは実機検証の結果、
+      X側の仕様変更により正常に描画されないことを確認したため廃止しました
+      （中身が空のまま表示され続ける状態を「動いている」と偽ることはしません）。
+      代わりに、タップすると実際のX検索結果に飛べる外部リンクにしています。</p>
+    <div class="x-link-grid">{buttons}</div>
+  </section>"""
 
 
 def esc_x(value):
     return str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+TRAIN_LINES = [
+    ("JR高崎線", "https://transit.yahoo.co.jp/diainfo/48/0"),
+    ("JR宇都宮線", "https://transit.yahoo.co.jp/diainfo/46/46"),
+    ("JR湘南新宿ライン", "https://transit.yahoo.co.jp/diainfo/25/0"),
+    ("JR上野東京ライン", "https://transit.yahoo.co.jp/diainfo/627/0"),
+]
+
+
+def fetch_train_status():
+    """Yahoo!路線情報の運行情報ページ（路線ごとの静的ページ）を直接取得する。
+    ステータス（平常運転／遅延／運転見合わせ等）はページ自身が表示する
+    見出しテキストとアイコンclassをそのまま使い、こちらで推測はしない。"""
+    name = "Yahoo!路線情報"
+    items = []
+    for line_name, url in TRAIN_LINES:
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=10)
+            r.raise_for_status()
+            r.encoding = "utf-8"
+            soup = BeautifulSoup(r.text, "html.parser")
+            dt = soup.select_one("#mdServiceStatus dt")
+            dd = soup.select_one("#mdServiceStatus dd")
+            updated = soup.select_one(".subText")
+            if not dt:
+                log_skip(f"{name}［{line_name}］", "運行情報が見つかりませんでした（サイト構造変更の可能性）")
+                continue
+            status_text = dt.get_text(strip=True)
+            icon = dt.select_one("span")
+            icon_class = icon.get("class", [""])[0] if icon else ""
+            is_normal = icon_class == "icnNormalLarge" or status_text == "平常運転"
+            items.append({
+                "line": line_name,
+                "status": status_text,
+                "is_normal": is_normal,
+                "detail": dd.get_text(strip=True) if dd else "",
+                "updated": updated.get_text(strip=True) if updated else "",
+                "link": url,
+            })
+        except Exception as e:
+            log_skip(f"{name}［{line_name}］", f"取得エラー ({e})")
+    return items
+
+
+EQ_FEED_URL = "https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml"
+EQ_RELEVANT_TITLES = ("震度速報", "震源・震度に関する情報")
+EQ_TARGET_PREF = "埼玉県"
+EQ_RECENT_HOURS = 72  # これより古い地震情報は表示対象外（「最新」という要件のため）
+
+
+def fetch_earthquake_info():
+    """気象庁 防災情報XMLフィード（公式・無料）から、埼玉県が最大震度の
+    対象に含まれる直近の地震情報のみを抽出する。個々の地震ごとの詳細XMLを
+    実際に読み込み、<Pref><Name>埼玉県</Name>...<MaxInt> の実データがある
+    場合のみ採用する（埼玉県に無関係な地震は対象外とし、憶測で埋めない）。"""
+    name = "気象庁 地震情報"
+    items = []
+    try:
+        r = requests.get(EQ_FEED_URL, headers=HEADERS, timeout=10)
+        r.encoding = "utf-8"
+        entries = re.findall(r"<entry>(.*?)</entry>", r.text, re.S)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        checked = 0
+        for entry in entries:
+            title_m = re.search(r"<title>(.*?)</title>", entry)
+            if not title_m or title_m.group(1) not in EQ_RELEVANT_TITLES:
+                continue
+            updated_m = re.search(r"<updated>(.*?)</updated>", entry)
+            if updated_m:
+                try:
+                    updated_dt = datetime.datetime.fromisoformat(updated_m.group(1).replace("Z", "+00:00"))
+                    if (now - updated_dt).total_seconds() > EQ_RECENT_HOURS * 3600:
+                        continue
+                except ValueError:
+                    pass
+            link_m = re.search(r'<link type="application/xml" href="([^"]+)"', entry)
+            if not link_m:
+                continue
+            checked += 1
+            if checked > 15:  # フィード全体の走査量に上限を設け、処理時間を抑える
+                break
+            try:
+                r2 = requests.get(link_m.group(1), headers=HEADERS, timeout=10)
+                r2.encoding = "utf-8"
+                xml = r2.text
+            except Exception:
+                continue
+            pref_m = re.search(
+                rf"<Pref><Name>{EQ_TARGET_PREF}</Name><Code>\d+</Code><MaxInt>(\d+)</MaxInt>", xml)
+            if not pref_m:
+                continue  # 埼玉県が対象に含まれない地震は表示しない
+            max_int = pref_m.group(1)
+            headline_m = re.search(r"<Headline>\s*<Text>(.*?)</Text>", xml, re.S)
+            hypo_m = re.search(r"<Hypocenter>.*?<Name>(.*?)</Name>", xml, re.S)
+            mag_m = re.search(r'<jmx_eb:Magnitude[^>]*description="([^"]+)"', xml)
+            origin_m = re.search(r"<OriginTime>(.*?)</OriginTime>", xml)
+            items.append({
+                "title": f"埼玉県で最大震度{max_int}を観測" + (f"（震源: {hypo_m.group(1)}）" if hypo_m else ""),
+                "detail": (headline_m.group(1).strip() if headline_m else "") +
+                           (f" {mag_m.group(1)}" if mag_m else ""),
+                "origin_time": origin_m.group(1) if origin_m else "",
+                "max_int": max_int,
+                "link": link_m.group(1).replace(".xml", "").replace(
+                    "developer/xml/data/", "www.jma.go.jp/bosai/map.html#") or "https://www.jma.go.jp/bosai/map.html",
+            })
+    except Exception as e:
+        log_skip(name, f"取得エラー ({e})")
+    if not items:
+        log_skip(name, f"直近{EQ_RECENT_HOURS}時間以内に埼玉県を含む地震情報なし（気象庁XMLフィードは正常に取得できています）")
+    return items
 
 
 def build_dataset():
@@ -338,7 +446,10 @@ def build_dataset():
 
     alerts.sort(key=lambda x: x["sort_key"], reverse=True)
     topics.sort(key=lambda x: x["sort_key"], reverse=True)
-    return alerts, topics
+
+    train_status = fetch_train_status()
+    earthquakes = fetch_earthquake_info()
+    return alerts, topics, train_status, earthquakes
 
 
 def render_item_row(item, extra_class=""):
@@ -360,7 +471,37 @@ def render_item_row(item, extra_class=""):
     </a>"""
 
 
-def render_html(alerts, topics, skip_log):
+def render_train_section(train_status):
+    if not train_status:
+        return "<p class='empty'>運行情報を取得できませんでした。</p>"
+    cards = []
+    for t in train_status:
+        status_class = "status-normal" if t["is_normal"] else "status-alert"
+        cards.append(f"""
+      <a class="train-card {status_class}" href="{t['link']}" target="_blank" rel="noopener">
+        <div class="train-line">{t['line']}</div>
+        <div class="train-status">{t['status']}</div>
+        <div class="train-detail">{t['detail']}</div>
+        <div class="train-updated">{t['updated']}｜Yahoo!路線情報</div>
+      </a>""")
+    return f"<div class='train-grid'>{''.join(cards)}</div>"
+
+
+def render_earthquake_section(earthquakes):
+    if not earthquakes:
+        return "<p class='empty'>直近72時間以内に埼玉県を含む地震情報はありません（気象庁XMLフィードで確認済み）。</p>"
+    cards = []
+    for eq in earthquakes:
+        cards.append(f"""
+      <a class="eq-card" href="{eq['link']}" target="_blank" rel="noopener">
+        <div class="eq-title">{eq['title']}</div>
+        <div class="eq-detail">{eq['detail']}</div>
+        <div class="eq-meta">発生: {eq['origin_time']}｜気象庁 防災情報XML</div>
+      </a>""")
+    return f"<div class='eq-grid'>{''.join(cards)}</div>"
+
+
+def render_html(alerts, topics, train_status, earthquakes, skip_log):
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
     alert_rows = "".join(render_item_row(a) for a in alerts) if alerts else "<p class='empty'>現在、取得できた防犯・防災情報はありません。</p>"
@@ -470,11 +611,25 @@ def render_html(alerts, topics, skip_log):
   .topic-city-block h3 {{ font-size: 15px; color: var(--ink-soft); margin: 16px 0 8px; }}
   .topic-city-block:first-child h3 {{ margin-top: 0; }}
 
+  .train-grid, .eq-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }}
+  .train-card, .eq-card {{ display: block; border-radius: 8px; padding: 12px 14px; text-decoration: none; border: 1px solid var(--rule); }}
+  .train-card.status-normal {{ background: rgba(79,176,138,0.12); border-color: var(--store); }}
+  .train-card.status-normal .train-status {{ color: var(--store); font-weight: 700; }}
+  .train-card.status-alert {{ background: rgba(226,102,90,0.14); border-color: var(--alert); }}
+  .train-card.status-alert .train-status {{ color: var(--alert); font-weight: 700; }}
+  .train-line {{ font-size: 13px; color: var(--ink-soft); }}
+  .train-status {{ font-size: 16px; margin: 2px 0; }}
+  .train-detail {{ font-size: 12px; color: var(--ink); }}
+  .train-updated {{ font-size: 10.5px; color: var(--ink-soft); margin-top: 6px; }}
+  .eq-card {{ background: rgba(226,102,90,0.08); border-color: var(--alert); color: var(--ink); }}
+  .eq-title {{ font-size: 14px; font-weight: 700; color: var(--alert); }}
+  .eq-detail {{ font-size: 12px; margin: 4px 0; }}
+  .eq-meta {{ font-size: 10.5px; color: var(--ink-soft); }}
   .unverified-tag {{ font-size: 11px; font-weight: 700; color: var(--alert); border: 1px solid var(--alert); border-radius: 6px; padding: 2px 8px; vertical-align: middle; margin-left: 8px; }}
   .disclaimer {{ font-size: 12.5px; color: var(--ink-soft); background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }}
-  .x-widget-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 12px; }}
-  .x-widget-card {{ background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; }}
-  .x-widget-card h4 {{ margin: 0 0 8px; font-size: 14px; color: var(--accent); }}
+  .x-link-grid {{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }}
+  .x-search-btn {{ background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 16px; font-size: 13px; text-decoration: none; font-weight: 700; }}
+  .x-search-btn:hover {{ background: var(--accent); color: #0c1116; }}
 
   footer {{ border-top: 1px solid var(--rule); padding-top: 14px; font-size: 12px; color: var(--ink-soft); }}
   footer ul {{ margin: 6px 0 0; padding-left: 18px; }}
@@ -492,6 +647,16 @@ def render_html(alerts, topics, skip_log):
     <div class="meta">北本市・桶川市・鴻巣市｜最終更新: {now_str}</div>
   </header>
 
+  <section class="block">
+    <h2>① 鉄道運行情報（JR高崎線・宇都宮線・湘南新宿ライン・上野東京ライン）</h2>
+    {render_train_section(train_status)}
+  </section>
+
+  <section class="block">
+    <h2>② 地震情報（埼玉県が対象に含まれるもののみ・気象庁XML）</h2>
+    {render_earthquake_section(earthquakes)}
+  </section>
+
   <div class="tabs">
     <button class="tab-btn active" data-target="全体">全体</button>
     <button class="tab-btn" data-target="北本市">北本市</button>
@@ -500,12 +665,12 @@ def render_html(alerts, topics, skip_log):
   </div>
 
   <section class="block">
-    <h2>① 緊急・防犯防災アラート</h2>
+    <h2>③ 緊急・防犯防災アラート</h2>
     <div class="item-list" id="alert-list">{alert_rows}</div>
   </section>
 
   <section class="block" id="topics-block">
-    <h2>② エリア新店舗・地域トピック</h2>
+    <h2>④ エリア新店舗・地域トピック</h2>
     {topics_html}
   </section>
 {render_x_widget_section()}
@@ -551,8 +716,8 @@ def main():
     start_time = time.time()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    alerts, topics = build_dataset()
-    html = render_html(alerts, topics, skip_log)
+    alerts, topics, train_status, earthquakes = build_dataset()
+    html = render_html(alerts, topics, train_status, earthquakes, skip_log)
 
     temp_file = OUTPUT_HTML + ".tmp"
     try:
@@ -561,6 +726,7 @@ def main():
         os.replace(temp_file, OUTPUT_HTML)
         print(f"✅ 地域ポータル生成完了: {OUTPUT_HTML}")
         print(f"   防犯・防災アラート: {len(alerts)}件 / 新店舗・地域トピック: {len(topics)}件")
+        print(f"   鉄道運行情報: {len(train_status)}路線 / 地震情報（埼玉県該当）: {len(earthquakes)}件")
         if skip_log:
             print(f"   ⚠️ スキップ件数: {len(skip_log)}件（詳細はページ下部フッター参照）")
     except Exception as e:

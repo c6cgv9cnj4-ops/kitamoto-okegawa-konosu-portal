@@ -2,7 +2,7 @@ name: Update local portal
 
 on:
   schedule:
-    - cron: "7 * * * *"   # 毎時7分（0分/30分は他ジョブと重なりやすいためズラしている）
+    - cron: "3,18,33,48 * * * *"   # 15分おき（電車遅延・地震情報は鮮度が重要なため短縮）
   workflow_dispatch: {}    # 手動実行ボタン用
 
 permissions:
