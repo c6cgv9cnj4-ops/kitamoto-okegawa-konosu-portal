@@ -80,6 +80,58 @@ def parse_police_date(date_str):
         return None
 
 
+VAGUE_TITLE_PATTERN = re.compile(r"警戒情報|お知らせ$")
+
+
+def fetch_notice_summary(url):
+    """「警戒情報（〇月〇日認知）」等のタイトルだけでは中身が分からない
+    お知らせについて、リンク先の詳細ページを実際に取得し、最初に掲載されて
+    いる具体的な被害内容（罪種＋発生概要・実際の町丁目レベルの場所を含む）を
+    要約として抽出する。取得できない場合はNoneを返し、憶測で埋めない。"""
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=8)
+        r.encoding = "utf-8"
+        soup = BeautifulSoup(r.text, "html.parser")
+        h1 = soup.select_one("h1")
+        if not h1:
+            return None
+        h3 = h1.find_next("h3")
+        if not h3:
+            return None
+        crime_type = h3.get_text(strip=True)
+        ul = h3.find_next_sibling("ul")
+        li = ul.select_one("li") if ul else None
+        if not li:
+            return None
+        detail = li.get_text(strip=True)
+        return f"{crime_type}：{detail}"
+    except Exception:
+        return None
+
+
+ALERT_ICON_RULES = [
+    (("不審者",), "🚨"),
+    (("特殊詐欺", "オレオレ", "詐欺"), "⚠️"),
+    (("窃盗", "盗難", "空き巣", "忍込み", "侵入"), "🔓"),
+    (("死亡事故", "交通事故", "事故", "ひき逃げ"), "🚗"),
+    (("逮捕", "暴行", "傷害", "強盗", "強姦", "脅迫"), "🚨"),
+    (("警戒情報",), "⚠️"),
+]
+TOPIC_ICON_RULES = [
+    (("オープン", "開店", "グランドオープン", "新装"), "🎉"),
+    (("閉店", "閉局", "休業"), "🔚"),
+    (("まつり", "祭", "フェス", "イベント"), "🎪"),
+    (("ランチ", "グルメ", "カフェ", "食", "レストラン"), "🍔"),
+]
+
+
+def classify_icon(text, rules, default_icon):
+    for keywords, icon in rules:
+        if any(k in text for k in keywords):
+            return icon
+    return default_icon
+
+
 def fetch_police_list(name, url, default_city, limit=12):
     """埼玉県警 警察署の「新着情報一覧」ページ(table.list_table)を安全に取得・パースする"""
     items = []
@@ -623,9 +675,31 @@ def build_dataset():
     alerts = dedup_and_filter_recent(alerts, RECENT_ALERT_DAYS)
     topics = dedup_and_filter_recent(topics, RECENT_ALERT_DAYS)
 
+    # 「警戒情報」等タイトルだけでは中身が分からないお知らせのみ、詳細ページを
+    # 実際に取得して要約を補う（対象を絞ることでフィルタ後の少数件のみに
+    # リクエストを限定し、処理時間を抑える）
+    for a in alerts:
+        a["summary"] = None
+        if VAGUE_TITLE_PATTERN.search(a["title"]):
+            summary = fetch_notice_summary(a["link"])
+            if summary:
+                a["summary"] = summary
+                # 詳細ページの被害内容から、より具体的な町丁目レベルの場所が
+                # 取得できる場合は、一覧ページのタイトルだけでは得られなかった
+                # 実際の発生場所として反映する（無い場合は既存のlocationを維持）
+                better_location = extract_location(summary, fallback_label="")
+                if better_location != "📍 ":
+                    a["location"] = better_location
+        a["icon"] = classify_icon(a["title"] + (a["summary"] or ""), ALERT_ICON_RULES, "📌")
+
+    for t in topics:
+        t["icon"] = classify_icon(t["title"], TOPIC_ICON_RULES, "📍")
+
     FIRE_KEYWORDS = ("火事", "火災", "出火", "全焼", "半焼", "ぼや")
     for a in alerts:
         a["is_fire"] = any(k in a["title"] for k in FIRE_KEYWORDS)
+        if a["is_fire"]:
+            a["icon"] = "🔥"
 
     # 新しい順に並べたうえで、火災関連のみ最優先で先頭に引き上げる（安定ソートを利用）
     alerts.sort(key=lambda x: x["sort_key"], reverse=True)
@@ -662,14 +736,18 @@ def render_item_row(item, extra_class=""):
     source = item["source"]
     location = item.get("location", "")
     is_fire = item.get("is_fire", False)
+    icon = item.get("icon", "")
+    summary = item.get("summary")
     cat_class = "cat-store" if cat_badge == "新店舗・開閉店" else ("cat-topic" if cat_badge == "地域トピック" else "cat-alert")
     fire_class = " item-fire" if is_fire else ""
-    fire_prefix = "🔥 " if is_fire else ""
+    icon_prefix = f"{icon} " if icon else ""
+    summary_html = f"<span class='item-summary'>{summary}</span>" if summary else ""
     return f"""
     <a class="item {extra_class}{fire_class}" data-city="{city_badge}" href="{link}" target="_blank" rel="noopener">
       <span class="badge city-badge">{city_badge}</span>
       <span class="badge {cat_class}">{cat_badge}</span>
-      <span class="item-title">{fire_prefix}{title}</span>
+      <span class="item-title">{icon_prefix}{title}</span>
+      {summary_html}
       <span class="loc-badge">{location}</span>
       <span class="item-meta">{date_disp}｜{source}</span>
     </a>"""
@@ -807,6 +885,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .cat-store {{ background: rgba(79,176,138,0.18); color: var(--store); }}
   .cat-topic {{ background: rgba(201,162,75,0.18); color: var(--topic); }}
   .item-title {{ font-size: 14px; }}
+  .item-summary {{ grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-soft); margin: -2px 0 2px; }}
   .loc-badge {{
     font-size: 11px;
     font-weight: 600;
