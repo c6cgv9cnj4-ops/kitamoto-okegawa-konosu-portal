@@ -1467,6 +1467,17 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     </section>""")
     topics_html = "".join(topic_sections)
 
+    # スキップログの文字列化は、以下の各セクションのデータ取得（内部で
+    # log_skip()を呼びうる）がすべて完了した後に行う必要がある。
+    # 先に文字列化してしまうと、この時点より後に発生したスキップが
+    # フッターの一覧に反映されない不具合になるため、必ず最後に計算する。
+    shopping_html = render_shopping_section()
+    ramen_db_html = render_ramen_db_section()
+    medical_gomi_html = render_medical_gomi_section()
+    events_html = render_events_section(topics)
+    x_widget_html = render_x_widget_section(x_posts)
+    system_status_html = render_system_status_section(now_str)
+
     skip_html = "".join(f"<li>{s}</li>" for s in skip_log) if skip_log else "<li>なし（すべての情報源から正常に取得できました）</li>"
 
     return f"""<!DOCTYPE html>
@@ -1708,12 +1719,12 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     <h2>④ エリア新店舗・地域トピック</h2>
     {topics_html}
   </section>
-{render_shopping_section()}
-{render_ramen_db_section()}
-{render_medical_gomi_section()}
-{render_events_section(topics)}
-{render_x_widget_section(x_posts)}
-{render_system_status_section(now_str)}
+{shopping_html}
+{ramen_db_html}
+{medical_gomi_html}
+{events_html}
+{x_widget_html}
+{system_status_html}
 
   <footer>
     データ取得状況（スキップログ）:
