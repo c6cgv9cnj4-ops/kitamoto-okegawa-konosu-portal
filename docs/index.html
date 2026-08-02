@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>近隣3市 地域ポータル（北本・桶川・鴻巣）</title>
+<style>
+  :root {
+    --bg: #12151a;
+    --bg-raised: #1b1f26;
+    --ink: #e6e9ee;
+    --ink-soft: #9aa4b2;
+    --rule: #2a2f38;
+    --accent: #5aa9e6;
+    --alert: #e2665a;
+    --store: #4fb08a;
+    --topic: #c9a24b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+    line-height: 1.7;
+  }
+  .page { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+  header.top { margin-bottom: 20px; }
+  header.top h1 { font-size: 26px; margin: 0 0 6px; }
+  header.top .meta { color: var(--ink-soft); font-size: 13px; }
+
+  .tabs { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }
+  .tab-btn {
+    background: var(--bg-raised);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .tab-btn.active { background: var(--accent); color: #0c1116; border-color: var(--accent); font-weight: 700; }
+
+  section.block { margin-bottom: 32px; }
+  section.block > h2 {
+    font-size: 18px;
+    border-bottom: 2px solid var(--rule);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+
+  .item-list { display: flex; flex-direction: column; gap: 8px; }
+  a.item {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  a.item:hover { border-color: var(--accent); }
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .city-badge { background: #232a35; color: var(--ink-soft); }
+  .cat-alert { background: rgba(226,102,90,0.18); color: var(--alert); }
+  .cat-store { background: rgba(79,176,138,0.18); color: var(--store); }
+  .cat-topic { background: rgba(201,162,75,0.18); color: var(--topic); }
+  .item-title { font-size: 14px; }
+  .loc-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #2a2a2a;
+    color: #00adb5;
+    white-space: nowrap;
+  }
+  .item-meta { font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
+  .empty { color: var(--ink-soft); font-size: 13.5px; }
+
+  .topic-city-block h3 { font-size: 15px; color: var(--ink-soft); margin: 16px 0 8px; }
+  .topic-city-block:first-child h3 { margin-top: 0; }
+
+  .unverified-tag { font-size: 11px; font-weight: 700; color: var(--alert); border: 1px solid var(--alert); border-radius: 6px; padding: 2px 8px; vertical-align: middle; margin-left: 8px; }
+  .disclaimer { font-size: 12.5px; color: var(--ink-soft); background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
+  .x-widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 12px; }
+  .x-widget-card { background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; }
+  .x-widget-card h4 { margin: 0 0 8px; font-size: 14px; color: var(--accent); }
+
+  footer { border-top: 1px solid var(--rule); padding-top: 14px; font-size: 12px; color: var(--ink-soft); }
+  footer ul { margin: 6px 0 0; padding-left: 18px; }
+
+  @media (max-width: 560px) {
+    a.item { grid-template-columns: 1fr; }
+    .item-meta, .loc-badge { white-space: normal; justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <h1>近隣3市 地域ポータル</h1>
+    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-02 20:01</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-target="全体">全体</button>
+    <button class="tab-btn" data-target="北本市">北本市</button>
+    <button class="tab-btn" data-target="桶川市">桶川市</button>
+    <button class="tab-btn" data-target="鴻巣市">鴻巣市</button>
+  </div>
+
+  <section class="block">
+    <h2>① 緊急・防犯防災アラート</h2>
+    <div class="item-list" id="alert-list">
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE9nZ0VsaGRlRGNUTnhjM2tSeUd4WWNOXzZ2dy1QUGo0dUFBS05oN25kWUs5NWs4SnVsWTJCVzA3b0d2U0N1SkJtbHlPQ3FSeWM3UUZ3UkdQSWZtWGtsRWt4NGNNTTd3LXUxb29kMEVLbW1kZUR6ZGx3Mm1wdF9oM2c?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">「死にたい？」などと脅し…10代女性に性的暴行加えようとケガさせたか 32歳の男逮捕（日テレNEWS NNN）</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-07-31｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/2026jidouonseikaisi.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">警察署代表電話への音声応答転送装置の導入について</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月31日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080723.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">特殊詐欺予兆電話情報（7月23日分）家電量販店騙りの詐欺電話が急増！</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月30日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080724.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">特殊詐欺予兆電話情報（7月24日から7月27日分）郵便局騙りの詐欺電話が急増！</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月30日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMigwFBVV95cUxQQ0doZ1RyalJHS1RRSjlmVFFjY0tKOWpybGRlOVNCclVsZ2YzQ2tFdG9VNzRKa2hDSHppdWdNaEI3YXg1bEtjeEtIazl3eC1BRTJDLU94QzBRVG5La2tJNVljSW5CamE4UUVCRzl2eVVneW1jSk9DenVGQThCX0JUUVBza9IBiAFBVV95cUxPdk54XzQ2c09nZGppOFl6ZDZycS1VUE9vdUljdGVKV1ZDVlZGTWNkREJTQ1hhaDRPcldfTHo4NlZobEhiSHozMFoyRTVzQ1N2VVozbXY1endGeEg4bjRWckZSRmRCTU1XQmFWbXB6VE5UZmhjNFFleHQ2Z2dTbXNOODZpWDAwOGE1?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">2人死亡…夏の交通安全運動期間中　いずれも日中の事故…ボーっとする可能性も、埼玉県警「暑さにも細心の注意を払って」　青切符制度の影響も…自転車の事故は前年比で減少</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-07-29｜Google News</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMiZkFVX3lxTE9yNzVJeGE1ODlHNkxIbWlLRzVLQjZtX1dTZG0tOGJKNGtsa09lWG5HbFh5TnhHSGZZSEh2VDdrdU8yV3pCRlpqZXI3NTJBVzhKT0poYzJNMFB1bUxET0s2a2UzaFFxQQ?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">性的暴行しようと…女性が引き込まれる 深夜の草むら、恐怖の5分間 襲った男逮捕、「死にたいか」と負傷させた疑い 母が通報 全治1カ月の女性、通話中の携帯を見せると…男が逃げていた「していません」｜埼玉新聞｜埼玉の最新ニュース・スポーツ・地域の話題</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-07-29｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080721.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">特殊詐欺予兆電話情報（7月21日分）オレオレ詐欺に注意！</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月28日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/keikai080629.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">警戒情報（令和8年6月29日～7月5日認知）</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月28日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiV0FVX3lxTE5PZDQteDdyOE94ejNIMHdpQ2prbkFuX3dFVW53S0N6VUNMb2xtUkpnWnBFSnN5bkNFczRJX18tRjJYeXFBV1pTdFN6UFJqelFBbnZJWWNfYw?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">解体建物で消防訓練 現場さながら救助活動 2階建てアパート2棟を活用 消防車両4台・消防隊員ら22人参加</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-24｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080714.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">特殊詐欺予兆電話情報（7月14日分）オレオレ詐欺に注意！</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月23日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080715-.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">特殊詐欺予兆電話情報（7月15日から7月16日分）オレオレ詐欺に注意！</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月23日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/yotyou080717-.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">特殊詐欺予兆電話情報（7月17日から7月20日分）オレオレ詐欺に注意！</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月23日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/news/firehead-cat/post-13333/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">解体予定の建物を使用して訓練を実施しました。</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年07月23日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/news/firehead-cat/post-10724/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">熱中症に注意しましょう（救急搬送人員速報値）</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年07月23日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE1WUFlmbGxIQmh5S216RjNCbUlmanQ3cmpFS0dLV1ExQzdRaWQzVUV2YzE3RzlsZFF3WFhjQ1ktalEwcEZ2alkydUc2U1MtZjNYR19yMjlCR0puVUtJTWZOOWtuZmRYRFNvYU1Da0RWSnc0YlRfdFJmbnBoNzR5cUE?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">男性死亡…トラック運転中、前のトレーラーに追突 昼1時半に国道で 搬送された男性、病院で死亡確認 片側2車線の直線道路だった（埼玉新聞）</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-07-22｜Google News</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMiZEFVX3lxTE84T1JOUDRZdU9KamhzWnVReHhQdXExU3htRVRzNzRlM2o5RlBhdnRHY0hWMUhLT25JN3hTWnd2N056bzlfY2VUNUdSS0NGV0lsdXNjRWNNczctLTJ0c0FqM1BqZTg?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">男性死亡…トラック運転中、前のトレーラーに追突 昼1時半に国道で 搬送された男性、病院で死亡確認 片側2車線の直線道路だった</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-07-22｜Google News</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://www.police.pref.saitama.lg.jp/p0140/kenke/2026koutsuujiko2.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">北本市内で交通死亡事故が発生</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">7月22日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMia0FVX3lxTE5JUGxqNFVsdmxQR2l0ZTZ6UU9OZDNfUDZ4OGtldjdmMDBkQ1dJVXdwbW5Ia3BTWFhoOENTTXI4bGJFcFJoVGxybzBERmlWa3B3T3NDODBXb3U5S1ktNnZPVUgtWXQ3Q050WjU0?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">【北本市】7月24日（金）25日（土）「本宿天神社 夏まつり」が開催されます！</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-07-20｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiV0FVX3lxTFBZTDRnSHJGdlRXNDloNW52MUZtSElpcDJUY2tJaXlMelNsNExJN3dLRlRMckFKZ2hWbVRkOU9fSmRjQXhwazVIa1dSOEU2c25vcVhnVjB0OA?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">渋谷署管内で不審な動き…任意同行すると、鴻巣署で行方を追っていた男だった 女性からカード2枚盗んだ疑い、山梨の男を逮捕 「一切知らない」と容疑を否認する19歳</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-07-20｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiV0FVX3lxTFBKdi1XOWF2UklYYXRabkNmN3U4THM4M2l3VUdfMGQyYW5QcWk0dmxTWmFpX05DMldzX21VX1VmbDJoeW5jc19aVVFxenJPd005TkxYQ0JZVQ?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">京都から来た高校生、JR鴻巣駅に…スーツを着た不審な少年、捜査員が発見→女性方から出てきたところを職務質問 受け子か…通帳1通をだまし取った疑いで逮捕 「もうかる仕事に応募した」と話す17歳｜埼玉新聞｜埼玉の最新ニュース・スポーツ・地域の話題</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-07-18｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMif0FVX3lxTFBLb09EUUxaY0NpVmVXRDZWWlZXMWZucmhJVUpDeWQwaEtfM3hQMWhieDAyNzl3QXdUS2VhU3RuTHRYYTZYLTBsTkptWkwzTV9VMkhUTU16c3RwUnFMeEh1b2xKRkJYTl8xTUhEQl9QUjBGbDYydmNBLUNVYV9kYVk?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">【速報】埼玉で停電 440軒 周辺でレベル3大雨警報（埼玉新聞）</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-17｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/kyougikai-ageo-6-11/kyougikai-ageo-8-6-5.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">令和8年第2回上尾警察署協議会開催概要</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">7月16日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/hanzaitoukei4.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">鴻巣警察署犯罪統計</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月15日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/keikai080622.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">警戒情報（令和8年6月22日～6月28日認知）</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月15日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE05WWRLaUdTYWlLVTZLR1BPMkNiTVZnMVp1ZllSaUZTaW9RaUtjV1pZbUl0QVhPcHlHS0dSWkpwZnFMRzc1b24wc1ZHU0lhc2g4TFRWMkVUTFJoM2N1SEZ0bXRyb1ZQNnFFeUE?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">【桶川市】いよいよ明日！7月15日・16日「桶川祇園祭」が開催されます！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-14｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/keikai080608.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">警戒情報（令和8年6月8日～6月14日認知）</span>
+      <span class="loc-badge">📍 鴻巣警察署 新着情報管内</span>
+      <span class="item-meta">7月9日｜鴻巣警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/guide/staff-recruit/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">令和8年度消防職員採用試験受験案内を掲載しました。［第1次試験日：9月20日（日）］</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年07月01日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/news/firehead-cat/post-13221/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">水難救助合同訓練を実施しました。</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年06月30日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/kotsu/bougaiunten.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">妨害運転は悪質で危険です！</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">6月25日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/news/firehead-cat/post-6779-2/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">救急現場での協力者に対する表彰式を行いました。［令和8年6月14日（日）］</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年06月19日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/news/firehead-cat/post-13116/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">県央だよりvol.43　掲載内容の訂正とお詫び</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年06月19日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/guide/staff-recruit/briefing-session/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">消防本部主催の採用説明会を７月12日（日）に開催します。</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年06月15日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/kotsu/r8_obon_menkyo.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">お盆期間中の運転免許手続</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">6月11日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="北本市・桶川市・鴻巣市（管内共通）" href="https://www.ken-o.or.jp/news/firehead-cat/post-8900/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市・桶川市・鴻巣市（管内共通）</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">消防・救急フェアを開催します</span>
+      <span class="loc-badge">📍 埼玉県央広域消防本部管内（北本市・桶川市・鴻巣市）</span>
+      <span class="item-meta">2026年06月11日｜埼玉県央広域消防本部 お知らせ</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/akiyataisaku.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">空き家が狙われています！</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">6月10日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/2026rokuonki.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">防犯対策電話録音機を無償配付します！</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">4月14日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/kyougikai-ageo-6-11/kyougikai-ageo-3-2.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">令和8年第1回上尾警察署協議会開催概要</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">4月10日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/jitensya0403.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">自転車盗難に注意</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">4月6日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/taiya0305.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">タイヤ・ホイールの盗難が増えています</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">3月6日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/0201saposagi.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">サポート詐欺に注意！</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">2月2日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/kyougikai-ageo-10-28.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">令和7年第3回上尾警察署協議会開催概要</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">12月3日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/kyougikai-ageo-6-19.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">令和7年第2回上尾警察署協議会開催概要</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">8月14日｜上尾警察署 新着情報</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://www.police.pref.saitama.lg.jp/p0130/kenke/hurikome180904.html" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-alert">防犯・防災</span>
+      <span class="item-title">防犯講話申請書様式</span>
+      <span class="loc-badge">📍 上尾警察署 新着情報管内</span>
+      <span class="item-meta">8月4日｜上尾警察署 新着情報</span>
+    </a></div>
+  </section>
+
+  <section class="block" id="topics-block">
+    <h2>② エリア新店舗・地域トピック</h2>
+    
+    <section class="topic-city-block" data-city="北本市">
+      <h3>北本市</h3>
+      <div class="item-list">
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMia0FVX3lxTFA1b3dUVUI0SHU1VUhkOU9NYU1MVEtLZmVhU1JNLTNKUTkwMXB2RGdkUWozUkJhdU9wT0dPazkzWkRXRndJNDdlektaWWRKRnZreFYtRFNMaTBUVlc5UDhnYW5mZUhNS1FtTlY0?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">【北本市】ヘイワールド夏まつりが開催されます！！</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-08-01｜Google News</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMia0FVX3lxTE0ycjFNR2NVSS1CTlVJTnJLNlF5OVk4MzBzUHpodnBQT0s2dFBUSE55SXNHYmEtdWhXX1BPeDFCMmduaDBsN0ZZWHJUM3I5d2RhVUlEcVJaUnNBcjRSY3I0SEd3NHhqZ1puUlg0?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【北本市】駅から徒歩1分の場所に「おたからや西中央通店」がオープンしていたことが分かりました！</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-07-15｜Google News</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/30/heyworld-8/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">1月31日（土）・2月1日（日）深井にあるヘイワールドで今大人気のシール販売会が開催されます♪</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-01-29｜号外NET 鴻巣市・北本市</span>
+    </a>
+    <a class="item " data-city="北本市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/22/kodomokouen/" target="_blank" rel="noopener">
+      <span class="badge city-badge">北本市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">北本市子供公園に新しい仲間が！トカラヤギの名前を募集しています♪</span>
+      <span class="loc-badge">📍 北本市エリア</span>
+      <span class="item-meta">2026-01-22｜号外NET 鴻巣市・北本市</span>
+    </a></div>
+    </section>
+    <section class="topic-city-block" data-city="桶川市">
+      <h3>桶川市</h3>
+      <div class="item-list">
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE9xd0xqcXZXMkhGUlRLZ01jYVo4V2N1ZVBXV0ItaVZpcUdPcnVzX0RXSVE0ZlpjNXBDUFNBTUN1YlBrbllVbFVKYVo3VThQR216UTNmX051Y2MtWDg5eDJpa1p6NkFxM0JEdWc?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【桶川市】「ドラッグストアセキ 上日出谷店」が店内改装のため休業中！リニューアルオープン日も分かりました！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-30｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE9WSzRSMzhFQ2ZFTHUtWS1DRnUwTC1OUk43TXBpeXpHUXNLQzJjTlQ1Qlh3SkRMdFNCY0hXX1VjUlM3ZDhxTmVvaE5KTXNMbXJ1clFBOHlIOWVWODJ0eVJLR09YZ2hZaHVDT0E?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【桶川市】西にあるコインランドリーが閉店となることが分かりました！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-30｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE11SzdtLXplQ0NGd0Q1bkt4bkdOTWZuZElhaFNndXg4M0FqcGVxMjhDZlhXZEdwQ3hnSl9Jd01ncktsTlhQdW1Xc2hOdHdZSjNSSjVDV0E1UWxoREJxUkI4UnNiNG96SDkybWc?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【桶川市】デカ盛り唐揚げ専門店「キッチンバスストップ桶川店」がオープンすることが分かりました！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-29｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTFBiWVVHbkZWMGphbHZLU1RoOWNocHc2VUFoSGVTLW1NUUgzMjZaNjRPaVB3ZUFBXzZfUlNPQUx4Y09kTjRsLV9Yclpsd3hxZHlFbDVNTkNqRVQzWE5TMExleDJVcDEzLTlDenc?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">【桶川市】大注目！どうぶつの森『しずえさん』がベニバナウォーク桶川に登場します！！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-26｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTFBadldmZnFXdnMxQkpJc1VRQnVXbk1kUjNmemRZQV9oR0tGU2ttY3ZvNlZtaWI2bVNjUEh2WWV0VkVyOUZhUlhyc0sxNDJ1b3AyWHFteHptSFZhWkxfeEpBbWNLNWI4YTRHR3c?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">【桶川市】残念ですね。こちらの薬局が閉局になっていたことが分かりました。</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-16｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE05WWRLaUdTYWlLVTZLR1BPMkNiTVZnMVp1ZllSaUZTaW9RaUtjV1pZbUl0QVhPcHlHS0dSWkpwZnFMRzc1b24wc1ZHU0lhc2g4TFRWMkVUTFJoM2N1SEZ0bXRyb1ZQNnFFeUE?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">【桶川市】いよいよ明日！7月15日・16日「桶川祇園祭」が開催されます！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-07-14｜Google News</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://ageo-okegawa.goguynet.jp/2026/02/28/okegawa-hanazusi-2/" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">✿¨̮感謝を込めて‎✿¨̮3/5始動！老舗の技×ヴィーガンの奇跡♪花寿司の“罪悪感ゼロ”な野菜寿司が美しすぎる！！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-02-27｜号外NET 上尾市・桶川市</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://ageo-okegawa.goguynet.jp/2026/02/25/okegawa-momoyama-3/" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">やっぱりここが一番！！隠れ家和食『百々山（ももやま）』で味わう季節を愛でる再訪ランチ</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-02-24｜号外NET 上尾市・桶川市</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://ageo-okegawa.goguynet.jp/2026/02/23/okegawa-saryu-to-2/" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">桶川で見つけた異国情緒！本格ロシア料理カフェ『サリュート』で絶品ピロシキランチを堪能してきました！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-02-22｜号外NET 上尾市・桶川市</span>
+    </a>
+    <a class="item " data-city="桶川市" href="https://ageo-okegawa.goguynet.jp/2026/02/22/okegawa-manekineko/" target="_blank" rel="noopener">
+      <span class="badge city-badge">桶川市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">マメトラに『まねきねこ』がオープン！ソウル市場＆マメコト跡地の様子を見に行ってきました！！</span>
+      <span class="loc-badge">📍 桶川市エリア</span>
+      <span class="item-meta">2026-02-21｜号外NET 上尾市・桶川市</span>
+    </a></div>
+    </section>
+    <section class="topic-city-block" data-city="鴻巣市">
+      <h3>鴻巣市</h3>
+      <div class="item-list">
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE54TDhxQU1SY08zQ0lBeE50X0F1YVVNMnMwNkZCbDZXOTlJYWlBbGlfeENGbml3aGEyUWt6emEyczZuZi04S2p5ajVQOXJ2aGlUWlZhNUxqcjBXSTFoajVOcVhXVnFfT2taQUE?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【鴻巣市】「麺屋 ひな多」跡地に動きが？！新たなラーメン店がオープンするようです！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-08-01｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE9vZjF1YkRaMjZ4THNkZW0yMmgtZTFWVnBfN3Y3Qk5nUVV3RkhWbEoyd1NzVFVIanUwakx4UzAtdGUzWW4ycG1BclM1NEREWGthbElpTXNSWTdCTGR4Z2l3UDliUGlGNnk3bEE?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【鴻巣市】残念ながら「青山餃子房」が閉店となっていたことが分かりました！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-07-31｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTFB5MHZ0dVNyUk90bWFTclpxcUI0Qi0tMk8wV2Q0VVpDT3dyYldOLW4zUHVzV3FxYjFwRzZLdDZkR3JZZ25DbXh6aHlwOEJ1eERVdjNNWWtPbkliaUM2OExWLWJHRktoX1ZoMFE?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【鴻巣市】「アバンセ川里店」がリニューアルオープンしていたことが分かりました！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-07-24｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE5nTmswLUhFTGRkekhGcUJoWVhfZ1J6aWFpdThNWWlITUtVVDgxOXB3aUhVQVNIbGZ3eWp4ellFRTRvaTBfNUpxaEYxZlZrc3d6TzZuSXYyWlVvd21mcGF5OGoxVHRfSUU2Z0E?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【鴻巣市】移転リニューアルオープンした「ラーメン あかね家 吹上店」に行ってきました！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-07-21｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE5rQU13NVE0QjJFQVE3UDg1cDVoZVFXbFNNY2JFN2M5Ni13N3FCTlFhT0Y1cllqZzFUMl9VSDRQNG1hUUw0dHA4eERSWl9ZWTVORk1ZRFZ2NGpaWENCLS1qOWJJN1FQNUl1OXc?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">【鴻巣市】手ぶらでOK！食事管理付きのパーソナルジムがオープンすることが分かりました！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-07-18｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE5Uc2N1UGxfMzh6a2FPQjBHWFlIVVFyYkRISEZGQVdBZWhEbVdwU3BNeERkb1QyR3JOMTJMdHFhbWZxNEd1aUp5VGI0TXh2X0c0REN6R3B2dDdITm0yR0JzWm51c0dHVHc1dVE?oc=5" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">【鴻巣市】明日から2日間！「吹上夏まつり」が7月18日・19日に開催されます！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-07-17｜Google News</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/31/ramunemonkey/" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">フジテレビ系連続ドラマ『ラムネモンキー』に鴻巣市役所が警察署として登場！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-01-30｜号外NET 鴻巣市・北本市</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/29/tenkunosato-4/" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">明用にある「天空の里」が開館4周年！1月29日（木）は入館料無料に♪</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-01-28｜号外NET 鴻巣市・北本市</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/28/tonkatu/" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-store">新店舗・開閉店</span>
+      <span class="item-title">2月18日 本町5丁目にオープン！和歌山県発の老舗とんかつ専門店『厚切りとんかつ よし平』</span>
+      <span class="loc-badge">📍 鴻巣市本町5丁目</span>
+      <span class="item-meta">2026-01-27｜号外NET 鴻巣市・北本市</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/26/bizarrepark/" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">鴻巣市最大級！古着イベントが2月8日（日）ビザールパークで開催予定</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-01-25｜号外NET 鴻巣市・北本市</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/25/helmet/" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">自転車用ヘルメットが2,000円引き！第5次鴻巣市自転車乗車用ヘルメット購入費補助金が2月1日より再開</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-01-24｜号外NET 鴻巣市・北本市</span>
+    </a>
+    <a class="item " data-city="鴻巣市" href="https://kounosu-kitamoto.goguynet.jp/2026/01/23/olympics/" target="_blank" rel="noopener">
+      <span class="badge city-badge">鴻巣市</span>
+      <span class="badge cat-topic">地域トピック</span>
+      <span class="item-title">ショートトラック・オリンピック日本代表で鴻巣市出身・金井莉佳選手への寄せ書きメッセージを募集します！</span>
+      <span class="loc-badge">📍 鴻巣市エリア</span>
+      <span class="item-meta">2026-01-22｜号外NET 鴻巣市・北本市</span>
+    </a></div>
+    </section>
+  </section>
+
+  <section class="block">
+    <h2>③ X（旧Twitter）速報ウィジェット <span class="unverified-tag">動作保証外</span></h2>
+    <p class="disclaimer">X公式の埋め込み機能をそのまま設置しています。表示内容はX側が
+      その都度返すものであり、当方のスクリプトでは中身を取得・検証していません。
+      デマ・不確実な投稿が含まれる可能性がある点をご了承のうえご覧ください。
+      うまく表示されない場合はX側の仕様変更が原因の可能性があります。</p>
+    <div class="x-widget-grid">
+      <div class="x-widget-card">
+        <h4>#北本市</h4>
+        <a class="twitter-timeline" data-height="400" data-theme="dark"
+           href="https://twitter.com/search?q=%23%E5%8C%97%E6%9C%AC%E5%B8%82&src=typed_query">
+           #北本市 のポストを読み込み中…
+        </a>
+      </div>
+      <div class="x-widget-card">
+        <h4>#桶川市</h4>
+        <a class="twitter-timeline" data-height="400" data-theme="dark"
+           href="https://twitter.com/search?q=%23%E6%A1%B6%E5%B7%9D%E5%B8%82&src=typed_query">
+           #桶川市 のポストを読み込み中…
+        </a>
+      </div>
+      <div class="x-widget-card">
+        <h4>#鴻巣市</h4>
+        <a class="twitter-timeline" data-height="400" data-theme="dark"
+           href="https://twitter.com/search?q=%23%E9%B4%BB%E5%B7%A3%E5%B8%82&src=typed_query">
+           #鴻巣市 のポストを読み込み中…
+        </a>
+      </div></div>
+  </section>
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+  <footer>
+    データ取得状況（スキップログ）:
+    <ul><li>なし（すべての情報源から正常に取得できました）</li></ul>
+    <p>※ 消防出動情報はライブ配信元がJavaScript動的読み込みのため、静的スクレイピングでは取得できず、消防本部の公式お知らせを代替表示しています。</p>
+    <p>※ 北本市・桶川市・鴻巣市の公式サイトはJSタブ構造のため新着情報を直接取得できず、Google Newsの検索結果（直近21日以内のみ）で代替しています。NHK埼玉のRSS配信は廃止済みのため対象外です。</p>
+  </footer>
+</div>
+
+<script>
+  const buttons = document.querySelectorAll(".tab-btn");
+  const alertItems = document.querySelectorAll("#alert-list .item");
+  const topicBlocks = document.querySelectorAll(".topic-city-block");
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      buttons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const target = btn.dataset.target;
+
+      alertItems.forEach(item => {
+        const city = item.dataset.city;
+        const show = target === "全体" || city === target || city.indexOf(target) !== -1;
+        item.style.display = show ? "" : "none";
+      });
+
+      topicBlocks.forEach(block => {
+        const city = block.dataset.city;
+        block.style.display = (target === "全体" || city === target) ? "" : "none";
+      });
+    });
+  });
+</script>
+</body>
+</html>
