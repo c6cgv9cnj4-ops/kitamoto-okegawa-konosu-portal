@@ -494,6 +494,194 @@ def render_x_widget_section(x_posts):
   </details>"""
 
 
+# ============================================================
+# 追加機能: 買い物・生活インフラ・イベント/天気
+#
+# 【誠実性についての注記】
+# スーパーのチラシ、休日当番医の一覧は、いずれも公式サイト側が「画像」
+# または「PDF」として掲載しており、テキストとして自動抽出できる特売品・
+# 当番医名の一覧は存在しない（実際にページを取得して確認済み）。
+# 存在しない「今日の当番医は〇〇医院です」といった具体的テキストを
+# 憶測で生成することは行わず、公式ページ・公式画像への実リンクのみを
+# 提供する（リンク自体は実在する一次情報）。
+# ============================================================
+SHOPPING_LINKS = {
+    "北本市": [("ヤオコー 北本店", "https://www.yaoko-net.com/store/store01/021.html"),
+              ("ヤオコー 北本中央店", "https://www.yaoko-net.com/store/store01/191.html")],
+    "桶川市": [("ベルク 公式チラシ一覧", "https://www.belc.jp/shop/")],
+    "鴻巣市": [("ヤオコー チラシ・店舗検索", "https://www.yaoko-net.com/store/"),
+              ("ベルク 公式チラシ一覧", "https://www.belc.jp/shop/")],
+}
+
+MEDICAL_LINKS = {
+    "北本市": [("桶川北本伊奈地区医師会 休日当番医", "https://okekitaina-ishikai.com/medical-search/")],
+    "桶川市": [("桶川北本伊奈地区医師会 休日当番医", "https://okekitaina-ishikai.com/medical-search/")],
+    "鴻巣市": [("鴻巣市 救急医療のご案内", "https://www.city.kounosu.saitama.jp/page/1562.html"),
+              ("鴻巣市夜間診療所", "https://www.city.kounosu.saitama.jp/page/1563.html")],
+}
+
+GOMI_LINKS = {
+    "北本市": "https://www.city.kitamoto.lg.jp/soshiki/shiminkeizai/kankyou/gyomu/g1/gomical/index.html",
+    "桶川市": "https://www.city.okegawa.lg.jp/kurashi/gomi_kankyo/index.html",
+    "鴻巣市": "https://www.city.kounosu.saitama.jp/page/1174.html",
+}
+
+CINEMA_LINK = ("こうのすシネマ 上映スケジュール（映画.com）", "https://eiga.com/theater/11/110208/")
+
+# 3市はいずれも半径5km圏内のため、気象庁観測地点も共通する北本市付近の
+# 座標で代表させる（Open-Meteo、APIキー不要・実データ）
+WEATHER_LAT, WEATHER_LON = 36.02, 139.53
+WMO_WEATHER_TEXT = {
+    0: "快晴", 1: "晴れ", 2: "薄曇り", 3: "曇り",
+    45: "霧", 48: "霧氷",
+    51: "小雨", 53: "雨", 55: "強い雨",
+    61: "雨", 63: "雨", 65: "大雨",
+    71: "雪", 73: "雪", 75: "大雪",
+    80: "にわか雨", 81: "にわか雨", 82: "激しいにわか雨",
+    95: "雷雨",
+}
+
+
+def fetch_weather_forecast():
+    """Open-Meteo（無料・APIキー不要）から北本・桶川・鴻巣エリアの
+    実際の天気予報（今日・明日）を取得する。"""
+    try:
+        url = (f"https://api.open-meteo.com/v1/forecast?latitude={WEATHER_LAT}&longitude={WEATHER_LON}"
+               "&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=2")
+        r = requests.get(url, headers=HEADERS, timeout=8)
+        data = r.json()
+        daily = data["daily"]
+        results = []
+        for i in range(len(daily["time"])):
+            code = daily["weathercode"][i]
+            results.append({
+                "date": daily["time"][i],
+                "weather": WMO_WEATHER_TEXT.get(code, f"天気コード{code}"),
+                "tmax": daily["temperature_2m_max"][i],
+                "tmin": daily["temperature_2m_min"][i],
+            })
+        return results
+    except Exception as e:
+        log_skip("Open-Meteo 天気予報", f"取得エラー ({e})")
+        return []
+
+
+EVENT_DATE_PATTERN = re.compile(r"(\d{1,2})月(\d{1,2})日")
+
+
+def extract_event_countdowns(topics):
+    """既に取得済みの地域トピック（新店舗・地域トピック）のタイトル本文から、
+    「7月24日」のような開催日表記を実際に抽出し、今日から見て未来（当日含む）
+    のイベントのみをカウントダウン対象とする。タイトルに日付が無いものは
+    対象外にする（憶測で開催日を作らない）。"""
+    today = datetime.date.today()
+    results = []
+    seen = set()
+    for t in topics:
+        if t.get("icon") != "🎪":
+            continue
+        m = EVENT_DATE_PATTERN.search(t["title"])
+        if not m:
+            continue
+        month, day = int(m.group(1)), int(m.group(2))
+        try:
+            event_date = datetime.date(today.year, month, day)
+            if event_date < today - datetime.timedelta(days=1):
+                event_date = datetime.date(today.year + 1, month, day)
+        except ValueError:
+            continue
+        days_left = (event_date - today).days
+        if days_left < 0 or days_left > 60:
+            continue
+        key = (t["city"], event_date, t["title"][:20])
+        if key in seen:
+            continue
+        seen.add(key)
+        results.append({
+            "city": t["city"], "title": t["title"], "link": t["link"],
+            "event_date": event_date, "days_left": days_left,
+        })
+        if len(results) >= 3:
+            break
+    results.sort(key=lambda x: x["days_left"])
+    return results
+
+
+def render_shopping_section():
+    blocks = []
+    for city, links in SHOPPING_LINKS.items():
+        link_html = "".join(
+            f'<a class="info-link" href="{l}" target="_blank" rel="noopener">🛒 {esc_x(n)}</a>' for n, l in links)
+        blocks.append(f"<div class='info-city-block'><h4>{city}</h4><div class='info-link-grid'>{link_html}</div></div>")
+    return f"""
+  <details class="block accordion">
+    <summary>🛍️ 買い物・店舗トピックス</summary>
+    <p class="disclaimer">チラシは各社とも画像形式で配信されており、特売品を
+      テキストとして自動抽出することはできないため、公式チラシページへの
+      直接リンクを設置しています。</p>
+    {"".join(blocks)}
+  </details>"""
+
+
+def render_medical_gomi_section():
+    med_blocks = []
+    for city, links in MEDICAL_LINKS.items():
+        link_html = "".join(
+            f'<a class="info-link" href="{l}" target="_blank" rel="noopener">🏥 {esc_x(n)}</a>' for n, l in links)
+        gomi_url = GOMI_LINKS.get(city, "")
+        gomi_html = f'<a class="info-link" href="{gomi_url}" target="_blank" rel="noopener">🗑️ {city} ごみカレンダー</a>' if gomi_url else ""
+        med_blocks.append(f"<div class='info-city-block'><h4>{city}</h4><div class='info-link-grid'>{link_html}{gomi_html}</div></div>")
+    return f"""
+  <details class="block accordion">
+    <summary>🏥 生活インフラ・ヘルスケア</summary>
+    <p class="disclaimer">休日当番医の一覧は医師会が画像（PDF/JPG）で公開して
+      おり、「本日の当番医」をテキストで自動抽出することはできないため、
+      最新の公式案内ページ・画像への直接リンクにしています。</p>
+    {"".join(med_blocks)}
+  </details>"""
+
+
+def render_events_section(topics):
+    weather = fetch_weather_forecast()
+    countdowns = extract_event_countdowns(topics)
+
+    if weather:
+        weather_cards = "".join(f"""
+      <div class="weather-card">
+        <div class="weather-date">{w['date']}</div>
+        <div class="weather-desc">{esc_x(w['weather'])}</div>
+        <div class="weather-temp">{w['tmax']}℃ / {w['tmin']}℃</div>
+      </div>""" for w in weather)
+        weather_html = f"<div class='weather-grid'>{weather_cards}</div>"
+    else:
+        weather_html = "<p class='empty'>天気予報を取得できませんでした。</p>"
+
+    if countdowns:
+        cd_cards = "".join(f"""
+      <a class="countdown-card" href="{c['link']}" target="_blank" rel="noopener">
+        <div class="countdown-days">{'本日開催' if c['days_left'] == 0 else f"あと{c['days_left']}日"}</div>
+        <div class="countdown-title">{esc_x(c['city'])}｜{esc_x(c['title'][:50])}</div>
+      </a>""" for c in countdowns)
+        countdown_html = f"<div class='countdown-grid'>{cd_cards}</div>"
+    else:
+        countdown_html = "<p class='empty'>タイトルから開催日が確認できる直近イベントはありません。</p>"
+
+    cinema_name, cinema_url = CINEMA_LINK
+    return f"""
+  <details class="block accordion">
+    <summary>🎪 イベント・天気・エンタメ</summary>
+    <h4>天気予報（北本・桶川・鴻巣エリア共通／Open-Meteo）</h4>
+    {weather_html}
+    <h4>開催日が確認できたイベント（最新3件・カウントダウン）</h4>
+    {countdown_html}
+    <h4>映画館</h4>
+    <a class="info-link" href="{cinema_url}" target="_blank" rel="noopener">🎬 {esc_x(cinema_name)}</a>
+    <p class="disclaimer">上映スケジュールは配給・上映日程が頻繁に変わり、
+      当サイトで独自に取得するより公式スケジュールを直接見ていただく方が
+      確実なため、外部サイトへのリンクにしています。</p>
+  </details>"""
+
+
 UPDATE_INTERVAL_NOTE = "15分おき（GitHub Actions cron: 3,18,33,48 * * * *）"
 REPO_ACTIONS_URL = "https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions"
 
@@ -961,6 +1149,29 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   details.accordion .disclaimer, details.accordion .x-link-grid, details.accordion .system-status-list {{ margin-bottom: 14px; }}
   .system-status-list {{ font-size: 12.5px; color: var(--ink-soft); line-height: 1.9; padding-left: 18px; }}
   .system-status-list a {{ color: var(--accent); }}
+  details.accordion h4 {{ font-size: 13px; color: var(--ink-soft); margin: 14px 0 8px; }}
+  details.accordion h4:first-of-type {{ margin-top: 4px; }}
+  .info-city-block {{ margin-bottom: 10px; }}
+  .info-city-block h4 {{ margin: 0 0 6px; }}
+  .info-link-grid {{ display: flex; flex-direction: column; gap: 8px; }}
+  .info-link {{
+    display: flex; align-items: center; min-height: 44px;
+    background: #14171c; border: 1px solid var(--rule); border-radius: 8px;
+    padding: 10px 14px; text-decoration: none; color: var(--ink); font-size: 13.5px;
+  }}
+  .info-link:hover {{ border-color: var(--accent); }}
+  .weather-grid {{ display: flex; gap: 10px; flex-wrap: wrap; }}
+  .weather-card {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 12px 16px; min-width: 120px; }}
+  .weather-date {{ font-size: 11px; color: var(--ink-soft); }}
+  .weather-desc {{ font-size: 15px; margin: 4px 0; }}
+  .weather-temp {{ font-size: 13px; color: var(--accent); font-weight: 700; }}
+  .countdown-grid {{ display: flex; flex-direction: column; gap: 8px; }}
+  .countdown-card {{
+    display: block; background: #14171c; border: 1px solid var(--topic); border-radius: 8px;
+    padding: 10px 14px; text-decoration: none; color: var(--ink); min-height: 44px;
+  }}
+  .countdown-days {{ font-size: 15px; font-weight: 700; color: var(--topic); }}
+  .countdown-title {{ font-size: 13px; margin-top: 2px; }}
   .rt-timeline {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}
   .rt-post {{ display: block; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--ink); }}
   .rt-post:hover {{ border-color: var(--accent); }}
@@ -1015,6 +1226,9 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     <h2>④ エリア新店舗・地域トピック</h2>
     {topics_html}
   </section>
+{render_shopping_section()}
+{render_medical_gomi_section()}
+{render_events_section(topics)}
 {render_x_widget_section(x_posts)}
 {render_system_status_section(now_str)}
 
