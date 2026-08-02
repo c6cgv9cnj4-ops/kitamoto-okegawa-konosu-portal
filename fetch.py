@@ -511,11 +511,60 @@ TOBAN_PDF_KONOSU = "https://www.city.kounosu.saitama.jp/uploaded/attachment/2454
 # 桶川市公式サイトが公開する当番医PDF（桶川北本伊奈地区医師会＝北本市・桶川市共通の輪番）
 TOBAN_PDF_OKEGAWA = "https://www.city.okegawa.lg.jp/material/files/group/28/Dr_Aug2026.pdf"
 
-GOMI_LINKS = {
-    "北本市": "https://www.city.kitamoto.lg.jp/soshiki/shiminkeizai/kankyou/gyomu/g1/gomical/index.html",
-    "桶川市": "https://www.city.okegawa.lg.jp/kurashi/gomi_kankyo/index.html",
-    "鴻巣市": "https://www.city.kounosu.saitama.jp/page/1174.html",
-}
+GOMI_OKEGAWA_URL = "https://www.city.okegawa.lg.jp/kurashi/gomi_kankyo/gomi_recycle/3204.html"
+GOMI_KONOSU_PDF = "https://www.city.kounosu.saitama.jp/uploaded/attachment/25585.pdf"
+WEEKDAY_JP = ("月", "火", "水", "木", "金", "土", "日")
+
+
+def fetch_gomi_okegawa():
+    """桶川市公式サイトのHTML表（東側地区／西側地区の曜日ルール）を実際に取得する。"""
+    name = "桶川市 ごみ収集日"
+    try:
+        r = requests.get(GOMI_OKEGAWA_URL, headers=HEADERS, timeout=10)
+        r.encoding = "utf-8"
+        soup = BeautifulSoup(r.text, "html.parser")
+        table = soup.select_one("table")
+        if not table:
+            log_skip(name, "収集日テーブルが見つかりませんでした")
+            return []
+        rows = []
+        for tr in table.select("tr")[1:]:
+            cells = [c.get_text(strip=True) for c in tr.select("td")]
+            if len(cells) >= 3:
+                rows.append({"category": cells[0], "east": cells[1], "west": cells[2]})
+        return rows
+    except Exception as e:
+        log_skip(name, f"取得エラー ({e})")
+        return []
+
+
+def fetch_gomi_konosu():
+    """鴻巣市公式サイトが公開するテキスト埋め込みPDF（東側収集コース）から、
+    分別区分と曜日ルールを実際に抽出する。"""
+    name = "鴻巣市 ごみ収集日（東側コース）"
+    try:
+        r = requests.get(GOMI_KONOSU_PDF, headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        rows = []
+        with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+            text = pdf.pages[0].extract_text() or ""
+        patterns = [
+            ("燃やせるごみ", r"燃やせるごみ\s*\n?([火金・、\s]+曜日)"),
+            ("燃やせないごみ", r"燃やせないごみ\s*\n?(月曜日)"),
+            ("プラスチック製容器包装（資源）", r"容器包装\(資源\)類\s*\n?(木曜日)"),
+            ("ビン類・カン類", r"ビン類・カン類\s*\n?(第[１1]・[３3]水曜日)"),
+            ("ペットボトル", r"ペットボトル\s*\n?(第[１1]・[３3]水曜日)"),
+            ("紙類・布類・衣類", r"紙類・布類・衣類\s*\n?(第[１1]・[３3]水曜日)"),
+            ("金属類", r"金属類\s*\n?(第[２2]・[４4]水曜日)"),
+        ]
+        for category, pat in patterns:
+            m = re.search(pat, text)
+            if m:
+                rows.append({"category": category, "rule": m.group(1)})
+        return rows
+    except Exception as e:
+        log_skip(name, f"取得エラー ({e})")
+        return []
 
 CINEMA_SCHEDULE_URL = "https://eiga.com/theater/11/110208/3254/"
 
@@ -563,24 +612,24 @@ def fetch_weather_forecast():
         return []
 
 
-def fetch_hourly_precipitation():
-    """Open-Meteoの時間別降水量（mm/h）を実データで取得する（本日〜明日）。"""
+def fetch_hourly_forecast():
+    """Open-Meteoの時間別降水量（mm/h）・気温（℃）を実データで取得する（本日〜24時間）。"""
     try:
         url = (f"https://api.open-meteo.com/v1/forecast?latitude={WEATHER_LAT}&longitude={WEATHER_LON}"
-               "&hourly=precipitation&timezone=Asia%2FTokyo&forecast_days=2")
+               "&hourly=precipitation,temperature_2m&timezone=Asia%2FTokyo&forecast_days=2")
         r = requests.get(url, headers=HEADERS, timeout=8)
         data = r.json()
         hourly = data["hourly"]
         now_hour = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         results = []
-        for t, mm in zip(hourly["time"], hourly["precipitation"]):
+        for t, mm, temp in zip(hourly["time"], hourly["precipitation"], hourly["temperature_2m"]):
             dt = datetime.datetime.fromisoformat(t)
             if dt < now_hour or dt >= now_hour + datetime.timedelta(hours=24):
                 continue
-            results.append({"time": dt.strftime("%m/%d %H時"), "mm": mm})
+            results.append({"time": dt.strftime("%m/%d %H時"), "mm": mm, "temp": temp})
         return results
     except Exception as e:
-        log_skip("Open-Meteo 時間別降水量", f"取得エラー ({e})")
+        log_skip("Open-Meteo 時間別予報", f"取得エラー ({e})")
         return []
 
 
@@ -708,37 +757,45 @@ def fetch_all_toban_doctors():
     return by_city
 
 
-def fetch_cinema_today_schedule():
-    """映画.com（こうのすシネマ）の実ページから、本日日付のtd要素に
-    含まれる実際の上映時刻をタイトルごとに抽出する。"""
+def fetch_cinema_week_schedule():
+    """映画.com（こうのすシネマ）の実ページから、掲載されている全日程分
+    （通常は本日から5〜6日分）のtd要素に含まれる実際の上映時刻を
+    作品ごと・日付ごとに構造化して抽出する。"""
     name = "こうのすシネマ 上映スケジュール"
-    items = []
-    today_str = datetime.date.today().strftime("%Y%m%d")
+    films = []
     try:
         r = requests.get(CINEMA_SCHEDULE_URL, headers=HEADERS, timeout=10)
         r.encoding = "utf-8"
         soup = BeautifulSoup(r.text, "html.parser")
         for section in soup.select("section[data-title]"):
             title = section.get("data-title", "").strip()
-            td = section.select_one(f'td[data-date="{today_str}"]')
-            if not td or not title:
+            if not title:
                 continue
-            times = [el.get_text(strip=True) for el in td.select("a.btn, span.btn, span")
-                     if re.match(r"^\d{1,2}:\d{2}", el.get_text(strip=True))]
-            times = [t for t in dict.fromkeys(times)]  # 順序を保ったまま重複除去
-            if times:
-                items.append({"title": title, "times": times})
+            days = []
+            for td in section.select("table.weekly-schedule td[data-date]"):
+                date_str = td.get("data-date", "")
+                try:
+                    d = datetime.datetime.strptime(date_str, "%Y%m%d").date()
+                except ValueError:
+                    continue
+                times = [el.get_text(strip=True) for el in td.select("a.btn, span.btn, span")
+                         if re.match(r"^\d{1,2}:\d{2}", el.get_text(strip=True))]
+                times = list(dict.fromkeys(times))  # 順序を保ったまま重複除去
+                if times:
+                    days.append({"date": d, "times": times})
+            if days:
+                films.append({"title": title, "days": days})
     except Exception as e:
         log_skip(name, f"取得エラー ({e})")
         return []
-    if not items:
-        log_skip(name, "本日の上映データを抽出できませんでした")
-    return items
+    if not films:
+        log_skip(name, "上映データを抽出できませんでした")
+    return films
 
 
 def fetch_shopping_news(city):
     """Google News RSSから、地域のスーパー（ヤオコー・ベルク）に関する
-    実際の報道タイトルを取得する（新店舗・改装・キャンペーン等の実текст）。"""
+    実際の報道タイトルを取得する（新店舗・改装・キャンペーン等の実テキスト）。"""
     name = f"店舗ニュース［{city}］"
     items = []
     query = SHOPPING_NEWS_QUERIES.get(city, city)
@@ -816,15 +873,53 @@ def render_shopping_section():
   </details>"""
 
 
+def render_gomi_today_alert(rows_by_city):
+    """本日・明日が何ごみの日かを、実際に抽出した曜日ルールから判定する。
+    「指定した日」「毎月」等の文言に含まれる単独の「日」「月」等の漢字を
+    誤って曜日と判定しないよう、必ず「◯曜」の形（例：日曜、月曜）で
+    一致するかを確認する。"""
+    today = datetime.date.today()
+    tomorrow = today + datetime.timedelta(days=1)
+    today_wd, tomorrow_wd = WEEKDAY_JP[today.weekday()], WEEKDAY_JP[tomorrow.weekday()]
+    today_wd_full, tomorrow_wd_full = f"{today_wd}曜", f"{tomorrow_wd}曜"
+
+    lines = []
+    okegawa_rows = rows_by_city.get("桶川市", [])
+    if okegawa_rows:
+        today_items = [r["category"] for r in okegawa_rows if today_wd_full in r.get("east", "") or today_wd_full in r.get("west", "")]
+        if today_items:
+            lines.append(f"桶川市 本日（{today_wd}）: " + "・".join(today_items))
+        tomorrow_items = [r["category"] for r in okegawa_rows if tomorrow_wd_full in r.get("east", "") or tomorrow_wd_full in r.get("west", "")]
+        if tomorrow_items:
+            lines.append(f"桶川市 明日（{tomorrow_wd}）: " + "・".join(tomorrow_items))
+    konosu_rows = rows_by_city.get("鴻巣市", [])
+    if konosu_rows:
+        today_items = [r["category"] for r in konosu_rows if today_wd_full in r.get("rule", "")]
+        if today_items:
+            lines.append(f"鴻巣市（東側コース） 本日（{today_wd}）: " + "・".join(today_items))
+        tomorrow_items = [r["category"] for r in konosu_rows if tomorrow_wd_full in r.get("rule", "")]
+        if tomorrow_items:
+            lines.append(f"鴻巣市（東側コース） 明日（{tomorrow_wd}）: " + "・".join(tomorrow_items))
+    if not lines:
+        return "<p class='empty'>本日該当する収集日データはありません。</p>"
+    return "<ul class='gomi-today-list'>" + "".join(f"<li>{esc_x(l)}</li>" for l in lines) + "</ul>"
+
+
 def render_medical_gomi_section():
     toban_by_city = fetch_all_toban_doctors()
+    gomi_okegawa = fetch_gomi_okegawa()
+    gomi_konosu = fetch_gomi_konosu()
+    gomi_by_city = {"桶川市": gomi_okegawa, "鴻巣市": gomi_konosu}
+
+    today_alert_html = render_gomi_today_alert(gomi_by_city)
+
     blocks = []
     for city in CITIES:
         doctors = toban_by_city.get(city, [])
         if doctors:
             cards = "".join(f"""
         <div class="toban-card">
-          <div class="toban-date">{d['date'].strftime('%m/%d')}（{'月火水木金土日'[d['date'].weekday()]}）</div>
+          <div class="toban-date">{d['date'].strftime('%m/%d')}（{WEEKDAY_JP[d['date'].weekday()]}）</div>
           <div class="toban-clinic">{esc_x(d['clinic'])}{('　' + esc_x(d['dept'])) if d.get('dept') else ''}</div>
           <div class="toban-addr">{esc_x(d['address'])}</div>
           <div class="toban-phone">☎ {esc_x(d['phone'])}</div>
@@ -832,44 +927,60 @@ def render_medical_gomi_section():
             doc_html = f"<div class='toban-grid'>{cards}</div>"
         else:
             doc_html = "<p class='empty'>今月・来月分の当番医データを抽出できませんでした。</p>"
-        gomi_url = GOMI_LINKS.get(city, "")
-        gomi_html = f'<a class="info-link" href="{gomi_url}" target="_blank" rel="noopener">🗑️ {city} ごみカレンダー</a>' if gomi_url else ""
-        blocks.append(f"<div class='info-city-block'><h4>{city} 休日当番医（直近3件）</h4>{doc_html}<div class='info-link-grid'>{gomi_html}</div></div>")
+
+        if city == "桶川市" and gomi_okegawa:
+            gomi_rows = "".join(
+                f"<tr><td>{esc_x(r['category'])}</td><td>{esc_x(r['east'])}</td><td>{esc_x(r['west'])}</td></tr>"
+                for r in gomi_okegawa)
+            gomi_html = f"<table class='gomi-table'><tr><th>分別区分</th><th>東側地区</th><th>西側地区</th></tr>{gomi_rows}</table>"
+        elif city == "鴻巣市" and gomi_konosu:
+            gomi_rows = "".join(
+                f"<tr><td>{esc_x(r['category'])}</td><td>{esc_x(r['rule'])}</td></tr>" for r in gomi_konosu)
+            gomi_html = f"<table class='gomi-table'><tr><th>分別区分</th><th>収集曜日（東側コース）</th></tr>{gomi_rows}</table>"
+        else:
+            gomi_html = ""
+
+        blocks.append(f"""<div class='info-city-block'>
+          <h4>{city} 休日当番医（直近3件）</h4>{doc_html}
+          {f"<h4>{city} ごみ収集曜日</h4>{gomi_html}" if gomi_html else ""}
+        </div>""")
+
     return f"""
   <details class="block accordion">
     <summary>🏥 生活インフラ・ヘルスケア</summary>
+    <h4>🗑️ 本日・明日のごみ</h4>
+    {today_alert_html}
     {"".join(blocks)}
   </details>"""
 
 
 def render_events_section(topics):
-    weather = fetch_weather_forecast()
-    precip = fetch_hourly_precipitation()
+    hourly = fetch_hourly_forecast()
     countdowns = extract_event_countdowns(topics)
-    cinema = fetch_cinema_today_schedule()
+    cinema_films = fetch_cinema_week_schedule()
 
-    if weather:
-        weather_cards = "".join(f"""
-      <div class="weather-card">
-        <div class="weather-date">{w['date']}</div>
-        <div class="weather-desc">{esc_x(w['weather'])}</div>
-        <div class="weather-temp">{w['tmax']}℃ / {w['tmin']}℃</div>
-      </div>""" for w in weather)
-        weather_html = f"<div class='weather-grid'>{weather_cards}</div>"
-    else:
-        weather_html = "<p class='empty'>天気予報を取得できませんでした。</p>"
-
-    if precip:
-        max_mm = max(p["mm"] for p in precip) or 1
-        bars = "".join(f"""
+    if hourly:
+        max_mm = max(h["mm"] for h in hourly) or 1
+        precip_bars = "".join(f"""
       <div class="precip-bar-col">
-        <div class="precip-bar" style="height:{max(2, int(p['mm'] / max_mm * 80))}px"></div>
-        <div class="precip-mm">{p['mm']}</div>
-        <div class="precip-time">{p['time'][-3:]}</div>
-      </div>""" for p in precip)
-        precip_html = f"<div class='precip-chart'>{bars}</div>"
+        <div class="precip-bar" style="height:{max(2, int(h['mm'] / max_mm * 80))}px"></div>
+        <div class="precip-mm">{h['mm']}</div>
+        <div class="precip-time">{h['time'][-3:]}</div>
+      </div>""" for h in hourly)
+        precip_html = f"<div class='precip-chart'>{precip_bars}</div>"
+
+        min_t, max_t = min(h["temp"] for h in hourly), max(h["temp"] for h in hourly)
+        span = (max_t - min_t) or 1
+        temp_bars = "".join(f"""
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:{max(2, int((h['temp'] - min_t) / span * 80))}px"></div>
+        <div class="precip-mm">{h['temp']}℃</div>
+        <div class="precip-time">{h['time'][-3:]}</div>
+      </div>""" for h in hourly)
+        temp_html = f"<div class='precip-chart'>{temp_bars}</div>"
     else:
         precip_html = "<p class='empty'>時間別降水量を取得できませんでした。</p>"
+        temp_html = "<p class='empty'>時間別気温を取得できませんでした。</p>"
 
     if countdowns:
         cd_cards = "".join(f"""
@@ -881,26 +992,33 @@ def render_events_section(topics):
     else:
         countdown_html = "<p class='empty'>タイトルから開催日が確認できる直近イベントはありません。</p>"
 
-    if cinema:
-        cinema_cards = "".join(f"""
-      <div class="cinema-card">
-        <div class="cinema-title">{esc_x(c['title'])}</div>
-        <div class="cinema-times">{" / ".join(esc_x(t) for t in c['times'])}</div>
-      </div>""" for c in cinema)
-        cinema_html = f"<div class='cinema-grid'>{cinema_cards}</div>"
+    if cinema_films:
+        film_blocks = []
+        for f in cinema_films:
+            day_rows = "".join(f"""
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">{d['date'].strftime('%m/%d')}（{WEEKDAY_JP[d['date'].weekday()]}）</span>
+            <span class="cinema-day-times">{" / ".join(esc_x(t) for t in d['times'])}</span>
+          </div>""" for d in f["days"])
+            film_blocks.append(f"""
+      <details class="cinema-film-accordion">
+        <summary>{esc_x(f['title'])}</summary>
+        {day_rows}
+      </details>""")
+        cinema_html = "".join(film_blocks)
     else:
-        cinema_html = "<p class='empty'>本日の上映データを抽出できませんでした。</p>"
+        cinema_html = "<p class='empty'>上映データを抽出できませんでした。</p>"
 
     return f"""
   <details class="block accordion">
     <summary>🎪 イベント・天気・エンタメ</summary>
-    <h4>天気予報（北本・桶川・鴻巣エリア共通）</h4>
-    {weather_html}
     <h4>時間別降水量（mm/h・本日〜24時間）</h4>
     {precip_html}
+    <h4>時間別気温（℃・本日〜24時間）</h4>
+    {temp_html}
     <h4>開催日が確認できたイベント（最新3件）</h4>
     {countdown_html}
-    <h4>こうのすシネマ 本日の上映スケジュール</h4>
+    <h4>こうのすシネマ 上映スケジュール（作品タップで日程表示）</h4>
     {cinema_html}
   </details>"""
 
@@ -1410,6 +1528,19 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .cinema-card {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }}
   .cinema-title {{ font-size: 13.5px; font-weight: 700; }}
   .cinema-times {{ font-size: 12px; color: var(--accent); margin-top: 4px; }}
+  .temp-bar {{ width: 12px; background: #e2665a; border-radius: 3px 3px 0 0; }}
+  .gomi-table {{ width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; }}
+  .gomi-table th, .gomi-table td {{ border: 1px solid var(--rule); padding: 6px 8px; text-align: left; }}
+  .gomi-table th {{ background: #1a1e26; color: var(--ink-soft); }}
+  .gomi-today-list {{ list-style: none; padding: 0; margin: 8px 0 16px; display: flex; flex-direction: column; gap: 6px; }}
+  .gomi-today-list li {{ background: rgba(79,176,138,0.14); border: 1px solid var(--store); border-radius: 8px; padding: 8px 12px; font-size: 13px; }}
+  .cinema-film-accordion {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; margin-bottom: 8px; padding: 2px 12px; }}
+  .cinema-film-accordion summary {{ cursor: pointer; font-size: 13.5px; font-weight: 700; padding: 10px 0; min-height: 44px; display: flex; align-items: center; list-style: none; }}
+  .cinema-film-accordion summary::-webkit-details-marker {{ display: none; }}
+  .cinema-day-row {{ display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 6px 0; border-top: 1px solid var(--rule); }}
+  .cinema-day-date {{ color: var(--ink-soft); white-space: nowrap; }}
+  .lifeline-alert {{ background: rgba(226,60,50,0.22); border: 2px solid #ff3b30; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }}
+  .lifeline-ok {{ font-size: 13px; color: var(--store); }}
   .rt-timeline {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}
   .rt-post {{ display: block; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--ink); }}
   .rt-post:hover {{ border-color: var(--accent); }}
@@ -1449,8 +1580,8 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   </section>
 
   <div class="tabs">
-    <button class="tab-btn active" data-target="全体">全体</button>
-    <button class="tab-btn" data-target="北本市">北本市</button>
+    <button class="tab-btn" data-target="全体">全体</button>
+    <button class="tab-btn active" data-target="北本市">北本市</button>
     <button class="tab-btn" data-target="桶川市">桶川市</button>
     <button class="tab-btn" data-target="鴻巣市">鴻巣市</button>
   </div>
@@ -1484,24 +1615,28 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   const alertItems = document.querySelectorAll("#alert-list .item");
   const topicBlocks = document.querySelectorAll(".topic-city-block");
 
+  function applyTabFilter(target) {{
+    alertItems.forEach(item => {{
+      const city = item.dataset.city;
+      const show = target === "全体" || city === target || city.indexOf(target) !== -1;
+      item.style.display = show ? "" : "none";
+    }});
+    topicBlocks.forEach(block => {{
+      const city = block.dataset.city;
+      block.style.display = (target === "全体" || city === target) ? "" : "none";
+    }});
+  }}
+
   buttons.forEach(btn => {{
     btn.addEventListener("click", () => {{
       buttons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      const target = btn.dataset.target;
-
-      alertItems.forEach(item => {{
-        const city = item.dataset.city;
-        const show = target === "全体" || city === target || city.indexOf(target) !== -1;
-        item.style.display = show ? "" : "none";
-      }});
-
-      topicBlocks.forEach(block => {{
-        const city = block.dataset.city;
-        block.style.display = (target === "全体" || city === target) ? "" : "none";
-      }});
+      applyTabFilter(btn.dataset.target);
     }});
   }});
+
+  const initialBtn = document.querySelector(".tab-btn.active");
+  if (initialBtn) applyTabFilter(initialBtn.dataset.target);
 </script>
 </body>
 </html>

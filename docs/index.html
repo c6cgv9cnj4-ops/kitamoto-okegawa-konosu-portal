@@ -165,6 +165,19 @@
   .cinema-card { background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
   .cinema-title { font-size: 13.5px; font-weight: 700; }
   .cinema-times { font-size: 12px; color: var(--accent); margin-top: 4px; }
+  .temp-bar { width: 12px; background: #e2665a; border-radius: 3px 3px 0 0; }
+  .gomi-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px; }
+  .gomi-table th, .gomi-table td { border: 1px solid var(--rule); padding: 6px 8px; text-align: left; }
+  .gomi-table th { background: #1a1e26; color: var(--ink-soft); }
+  .gomi-today-list { list-style: none; padding: 0; margin: 8px 0 16px; display: flex; flex-direction: column; gap: 6px; }
+  .gomi-today-list li { background: rgba(79,176,138,0.14); border: 1px solid var(--store); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+  .cinema-film-accordion { background: #14171c; border: 1px solid var(--rule); border-radius: 8px; margin-bottom: 8px; padding: 2px 12px; }
+  .cinema-film-accordion summary { cursor: pointer; font-size: 13.5px; font-weight: 700; padding: 10px 0; min-height: 44px; display: flex; align-items: center; list-style: none; }
+  .cinema-film-accordion summary::-webkit-details-marker { display: none; }
+  .cinema-day-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 6px 0; border-top: 1px solid var(--rule); }
+  .cinema-day-date { color: var(--ink-soft); white-space: nowrap; }
+  .lifeline-alert { background: rgba(226,60,50,0.22); border: 2px solid #ff3b30; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+  .lifeline-ok { font-size: 13px; color: var(--store); }
   .rt-timeline { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .rt-post { display: block; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--ink); }
   .rt-post:hover { border-color: var(--accent); }
@@ -190,7 +203,7 @@
 <div class="page">
   <header class="top">
     <h1>近隣3市 地域ポータル</h1>
-    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-02 22:55 JST</div>
+    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-02 23:18 JST</div>
   </header>
 
   <section class="block">
@@ -200,25 +213,25 @@
         <div class="train-line">JR高崎線</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月2日 22時54分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 23時17分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/46/46" target="_blank" rel="noopener">
         <div class="train-line">JR宇都宮線</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月2日 22時54分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 23時17分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/25/0" target="_blank" rel="noopener">
         <div class="train-line">JR湘南新宿ライン</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月2日 22時54分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 23時17分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/627/0" target="_blank" rel="noopener">
         <div class="train-line">JR上野東京ライン</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月2日 22時54分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月2日 23時17分更新｜Yahoo!路線情報</div>
       </a></div>
   </section>
 
@@ -228,8 +241,8 @@
   </section>
 
   <div class="tabs">
-    <button class="tab-btn active" data-target="全体">全体</button>
-    <button class="tab-btn" data-target="北本市">北本市</button>
+    <button class="tab-btn" data-target="全体">全体</button>
+    <button class="tab-btn active" data-target="北本市">北本市</button>
     <button class="tab-btn" data-target="桶川市">桶川市</button>
     <button class="tab-btn" data-target="鴻巣市">鴻巣市</button>
   </div>
@@ -413,7 +426,10 @@
 
   <details class="block accordion">
     <summary>🏥 生活インフラ・ヘルスケア</summary>
-    <div class='info-city-block'><h4>北本市 休日当番医（直近3件）</h4><div class='toban-grid'>
+    <h4>🗑️ 本日・明日のごみ</h4>
+    <ul class='gomi-today-list'><li>桶川市 明日（月）: 燃やせるごみ・金属・ガラス・乾電池・紙製の容器と包装紙</li></ul>
+    <div class='info-city-block'>
+          <h4>北本市 休日当番医（直近3件）</h4><div class='toban-grid'>
         <div class="toban-card">
           <div class="toban-date">08/02（日）</div>
           <div class="toban-clinic">さとうクリニック　内/消内/小</div>
@@ -431,7 +447,10 @@
           <div class="toban-clinic">二ッ家整形外科　整/リハ/リウ/内</div>
           <div class="toban-addr">北本市二ツ家2-107</div>
           <div class="toban-phone">☎ 590-3344</div>
-        </div></div><div class='info-link-grid'><a class="info-link" href="https://www.city.kitamoto.lg.jp/soshiki/shiminkeizai/kankyou/gyomu/g1/gomical/index.html" target="_blank" rel="noopener">🗑️ 北本市 ごみカレンダー</a></div></div><div class='info-city-block'><h4>桶川市 休日当番医（直近3件）</h4><div class='toban-grid'>
+        </div></div>
+          
+        </div><div class='info-city-block'>
+          <h4>桶川市 休日当番医（直近3件）</h4><div class='toban-grid'>
         <div class="toban-card">
           <div class="toban-date">08/02（日）</div>
           <div class="toban-clinic">埼玉県央病院　内/外</div>
@@ -449,7 +468,10 @@
           <div class="toban-clinic">桶川医療クリニック　内</div>
           <div class="toban-addr">桶川市若宮1-5-2桶川マイン4F</div>
           <div class="toban-phone">☎ 786-5200</div>
-        </div></div><div class='info-link-grid'><a class="info-link" href="https://www.city.okegawa.lg.jp/kurashi/gomi_kankyo/index.html" target="_blank" rel="noopener">🗑️ 桶川市 ごみカレンダー</a></div></div><div class='info-city-block'><h4>鴻巣市 休日当番医（直近3件）</h4><div class='toban-grid'>
+        </div></div>
+          <h4>桶川市 ごみ収集曜日</h4><table class='gomi-table'><tr><th>分別区分</th><th>東側地区</th><th>西側地区</th></tr><tr><td>燃やせるごみ</td><td>原則的に毎週 月曜、木曜</td><td>原則的に毎週 火曜、金曜</td></tr><tr><td>プラスチック</td><td>原則的に毎週 火曜</td><td>原則的に毎週 木曜</td></tr><tr><td>金属・ガラス・乾電池</td><td>原則的に毎月 金曜 2回指定した日</td><td>原則的に毎月 月曜 2回指定した日</td></tr><tr><td>その他ごみ</td><td>原則的に毎月 水曜 1回指定した日</td><td>原則的に毎月 水曜 1回指定した日</td></tr><tr><td>紙製の容器と包装紙</td><td>原則的に毎月 金曜 2回指定した日</td><td>原則的に毎月 月曜 2回指定した日</td></tr><tr><td>古着・新聞紙・雑誌・段ボール・紙パック</td><td>原則的に毎月 土曜 2回指定した日</td><td>原則的に毎月 土曜 2回指定した日</td></tr></table>
+        </div><div class='info-city-block'>
+          <h4>鴻巣市 休日当番医（直近3件）</h4><div class='toban-grid'>
         <div class="toban-card">
           <div class="toban-date">08/02（日）</div>
           <div class="toban-clinic">あおばクリニック</div>
@@ -467,30 +489,15 @@
           <div class="toban-clinic">鴻巣第一クリニック</div>
           <div class="toban-addr">大間７７６－１</div>
           <div class="toban-phone">☎ ℡．048-542-5566</div>
-        </div></div><div class='info-link-grid'><a class="info-link" href="https://www.city.kounosu.saitama.jp/page/1174.html" target="_blank" rel="noopener">🗑️ 鴻巣市 ごみカレンダー</a></div></div>
+        </div></div>
+          
+        </div>
   </details>
 
   <details class="block accordion">
     <summary>🎪 イベント・天気・エンタメ</summary>
-    <h4>天気予報（北本・桶川・鴻巣エリア共通）</h4>
-    <div class='weather-grid'>
-      <div class="weather-card">
-        <div class="weather-date">2026-08-02</div>
-        <div class="weather-desc">強い雨</div>
-        <div class="weather-temp">33.9℃ / 23.8℃</div>
-      </div>
-      <div class="weather-card">
-        <div class="weather-date">2026-08-03</div>
-        <div class="weather-desc">小雨</div>
-        <div class="weather-temp">26.2℃ / 22.9℃</div>
-      </div></div>
     <h4>時間別降水量（mm/h・本日〜24時間）</h4>
     <div class='precip-chart'>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:80px"></div>
-        <div class="precip-mm">0.2</div>
-        <div class="precip-time">22時</div>
-      </div>
       <div class="precip-bar-col">
         <div class="precip-bar" style="height:2px"></div>
         <div class="precip-mm">0.0</div>
@@ -532,12 +539,12 @@
         <div class="precip-time">06時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="precip-bar" style="height:40px"></div>
+        <div class="precip-bar" style="height:80px"></div>
         <div class="precip-mm">0.1</div>
         <div class="precip-time">07時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="precip-bar" style="height:40px"></div>
+        <div class="precip-bar" style="height:80px"></div>
         <div class="precip-mm">0.1</div>
         <div class="precip-time">08時</div>
       </div>
@@ -582,7 +589,7 @@
         <div class="precip-time">16時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="precip-bar" style="height:40px"></div>
+        <div class="precip-bar" style="height:80px"></div>
         <div class="precip-mm">0.1</div>
         <div class="precip-time">17時</div>
       </div>
@@ -605,55 +612,462 @@
         <div class="precip-bar" style="height:2px"></div>
         <div class="precip-mm">0.0</div>
         <div class="precip-time">21時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">22時</div>
+      </div></div>
+    <h4>時間別気温（℃・本日〜24時間）</h4>
+    <div class='precip-chart'>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:21px"></div>
+        <div class="precip-mm">23.8℃</div>
+        <div class="precip-time">23時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:19px"></div>
+        <div class="precip-mm">23.7℃</div>
+        <div class="precip-time">00時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:16px"></div>
+        <div class="precip-mm">23.6℃</div>
+        <div class="precip-time">01時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:9px"></div>
+        <div class="precip-mm">23.3℃</div>
+        <div class="precip-time">02時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:7px"></div>
+        <div class="precip-mm">23.2℃</div>
+        <div class="precip-time">03時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:4px"></div>
+        <div class="precip-mm">23.1℃</div>
+        <div class="precip-time">04時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">22.9℃</div>
+        <div class="precip-time">05時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">22.9℃</div>
+        <div class="precip-time">06時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">23.0℃</div>
+        <div class="precip-time">07時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:4px"></div>
+        <div class="precip-mm">23.1℃</div>
+        <div class="precip-time">08時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:12px"></div>
+        <div class="precip-mm">23.4℃</div>
+        <div class="precip-time">09時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:19px"></div>
+        <div class="precip-mm">23.7℃</div>
+        <div class="precip-time">10時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:29px"></div>
+        <div class="precip-mm">24.1℃</div>
+        <div class="precip-time">11時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:46px"></div>
+        <div class="precip-mm">24.8℃</div>
+        <div class="precip-time">12時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:63px"></div>
+        <div class="precip-mm">25.5℃</div>
+        <div class="precip-time">13時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:80px"></div>
+        <div class="precip-mm">26.2℃</div>
+        <div class="precip-time">14時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:77px"></div>
+        <div class="precip-mm">26.1℃</div>
+        <div class="precip-time">15時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:65px"></div>
+        <div class="precip-mm">25.6℃</div>
+        <div class="precip-time">16時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:50px"></div>
+        <div class="precip-mm">25.0℃</div>
+        <div class="precip-time">17時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:41px"></div>
+        <div class="precip-mm">24.6℃</div>
+        <div class="precip-time">18時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:33px"></div>
+        <div class="precip-mm">24.3℃</div>
+        <div class="precip-time">19時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:26px"></div>
+        <div class="precip-mm">24.0℃</div>
+        <div class="precip-time">20時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:21px"></div>
+        <div class="precip-mm">23.8℃</div>
+        <div class="precip-time">21時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:12px"></div>
+        <div class="precip-mm">23.4℃</div>
+        <div class="precip-time">22時</div>
       </div></div>
     <h4>開催日が確認できたイベント（最新3件）</h4>
     <p class='empty'>タイトルから開催日が確認できる直近イベントはありません。</p>
-    <h4>こうのすシネマ 本日の上映スケジュール</h4>
-    <div class='cinema-grid'>
-      <div class="cinema-card">
-        <div class="cinema-title">スパイダーマン　ブランド・ニュー・デイ</div>
-        <div class="cinema-times">13:15 / 18:35～21:10</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">モアナと伝説の海</div>
-        <div class="cinema-times">16:45～18:50</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">映画クレヨンしんちゃん　奇々怪々！オラの妖怪バケ～ション</div>
-        <div class="cinema-times">9:00 / 11:10 / 13:25 / 15:40 / 17:50～19:40</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">映画ちいかわ　人魚の島のひみつ</div>
-        <div class="cinema-times">9:20 / 11:30 / 13:40 / 15:55 / 18:10 / 20:20～22:10</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">キングダム　魂の決戦</div>
-        <div class="cinema-times">9:05 / 11:50 / 15:25 / 18:35 / 20:05～22:30</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">Michael マイケル</div>
-        <div class="cinema-times">13:55～16:10</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">トイ・ストーリー5</div>
-        <div class="cinema-times">9:00 / 11:15 / 13:30 / 15:45 / 18:00 / 20:20～22:15</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">名探偵コナン　ハイウェイの堕天使</div>
-        <div class="cinema-times">17:10～19:10</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">それいけ！アンパンマン　パンタンと約束の星</div>
-        <div class="cinema-times">9:10～10:20</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">カプリコン・1</div>
-        <div class="cinema-times">10:35～12:55</div>
-      </div>
-      <div class="cinema-card">
-        <div class="cinema-title">仮面ライダーゼッツ＆超宇宙刑事ギャバン インフィニティ　Wヒーロー夏映画2026</div>
-        <div class="cinema-times">8:55 / 11:00 / 16:20～18:05</div>
-      </div></div>
+    <h4>こうのすシネマ 上映スケジュール（作品タップで日程表示）</h4>
+    
+      <details class="cinema-film-accordion">
+        <summary>スパイダーマン　ブランド・ニュー・デイ</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">13:15 / 18:35～21:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">13:15 / 18:35～21:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">13:15 / 18:35～21:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">13:15 / 18:35～21:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">13:15 / 18:35～21:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">9:00 / 11:20 / 14:15 / 17:10 / 20:00～22:35</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">9:00 / 11:20 / 14:15 / 17:10 / 20:00～22:35</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">9:00 / 11:20 / 14:15 / 17:10 / 20:00～22:35</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">9:00 / 11:20 / 14:15 / 17:10 / 20:00～22:35</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">9:00 / 11:20 / 14:15 / 17:10 / 20:00～22:35</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>モアナと伝説の海</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">16:45～18:50</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">16:45～18:50</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">16:45～18:50</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">16:45～18:50</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">16:45～18:50</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">8:55 / 11:55 / 14:20 / 19:10 / 20:00～22:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">8:55 / 11:55 / 14:20 / 19:10 / 20:00～22:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">8:55 / 11:55 / 14:20 / 19:10 / 20:00～22:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">8:55 / 11:55 / 14:20 / 19:10 / 20:00～22:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">8:55 / 11:55 / 14:20 / 19:10 / 20:00～22:05</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>映画クレヨンしんちゃん　奇々怪々！オラの妖怪バケ～ション</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">9:00 / 11:10 / 13:25 / 15:40 / 17:50～19:40</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">9:00 / 11:10 / 13:25 / 15:40 / 17:50～19:40</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">9:00 / 11:10 / 13:25 / 15:40 / 17:50～19:40</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">9:00 / 11:10 / 13:25 / 15:40 / 17:50～19:40</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">9:00 / 11:10 / 13:25 / 15:40 / 17:50～19:40</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>映画ちいかわ　人魚の島のひみつ</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">9:20 / 11:30 / 13:40 / 15:55 / 18:10 / 20:20～22:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">9:20 / 11:30 / 13:40 / 15:55 / 18:10 / 20:20～22:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">9:20 / 11:30 / 13:40 / 15:55 / 18:10 / 20:20～22:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">9:20 / 11:30 / 13:40 / 15:55 / 18:10 / 20:20～22:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">9:20 / 11:30 / 13:40 / 15:55 / 18:10 / 20:20～22:10</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>キングダム　魂の決戦</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">9:05 / 11:50 / 15:25 / 18:35 / 20:05～22:30</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">9:05 / 11:50 / 15:25 / 18:35 / 20:05～22:30</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">9:05 / 11:50 / 15:25 / 18:35 / 20:05～22:30</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">9:05 / 11:50 / 15:25 / 18:30～21:15</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">9:05 / 11:50 / 15:25 / 18:35 / 20:05～22:30</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>Michael マイケル</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">13:55～16:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">13:55～16:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">13:55～16:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">13:55～16:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">13:55～16:10</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>トイ・ストーリー5</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">9:00 / 11:15 / 13:30 / 15:45 / 18:00 / 20:20～22:15</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">9:00 / 11:15 / 13:30 / 15:45 / 18:00 / 20:20～22:15</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">9:00 / 11:15 / 13:30 / 15:45 / 18:00 / 20:20～22:15</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">9:00 / 11:15 / 13:30 / 15:45 / 20:20～22:15</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">9:00 / 11:15 / 13:30 / 15:45 / 18:00 / 20:20～22:15</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>口に関するアンケート</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">9:05～10:45</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">9:05～10:45</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">9:05～10:45</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">9:05～10:45</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>名探偵コナン　ハイウェイの堕天使</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">17:10～19:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">17:10～19:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">17:10～19:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">17:10～19:10</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">17:10～19:10</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>それいけ！アンパンマン　パンタンと約束の星</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">9:10～10:20</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">9:10～10:20</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">9:10～10:20</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">9:10～10:20</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">9:10～10:20</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>カプリコン・1</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">10:35～12:55</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">10:35～12:55</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">10:35～12:55</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">10:35～12:55</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">10:35～12:55</span>
+          </div>
+      </details>
+      <details class="cinema-film-accordion">
+        <summary>仮面ライダーゼッツ＆超宇宙刑事ギャバン インフィニティ　Wヒーロー夏映画2026</summary>
+        
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/02（日）</span>
+            <span class="cinema-day-times">8:55 / 11:00 / 16:20～18:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/03（月）</span>
+            <span class="cinema-day-times">11:00 / 16:20～18:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/04（火）</span>
+            <span class="cinema-day-times">11:00 / 16:20～18:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/05（水）</span>
+            <span class="cinema-day-times">11:00 / 16:20～18:05</span>
+          </div>
+          <div class="cinema-day-row">
+            <span class="cinema-day-date">08/06（木）</span>
+            <span class="cinema-day-times">11:00 / 16:20～18:05</span>
+          </div>
+      </details>
   </details>
 
   <details class="block accordion">
@@ -718,7 +1132,7 @@
   <details class="block accordion">
     <summary>⚙️ システム状態・自動更新について</summary>
     <ul class="system-status-list">
-      <li>このページの生成時刻（JST）: 2026-08-02 22:55 JST</li>
+      <li>このページの生成時刻（JST）: 2026-08-02 23:18 JST</li>
       <li>自動更新間隔: 15分おき（GitHub Actions cron: 3,18,33,48 * * * *）</li>
       <li>実行環境: GitHub Actions（Macの電源・スリープに依存しない）</li>
       <li>実行履歴の確認: <a href="https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions" target="_blank" rel="noopener">https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions</a></li>
@@ -740,24 +1154,28 @@
   const alertItems = document.querySelectorAll("#alert-list .item");
   const topicBlocks = document.querySelectorAll(".topic-city-block");
 
+  function applyTabFilter(target) {
+    alertItems.forEach(item => {
+      const city = item.dataset.city;
+      const show = target === "全体" || city === target || city.indexOf(target) !== -1;
+      item.style.display = show ? "" : "none";
+    });
+    topicBlocks.forEach(block => {
+      const city = block.dataset.city;
+      block.style.display = (target === "全体" || city === target) ? "" : "none";
+    });
+  }
+
   buttons.forEach(btn => {
     btn.addEventListener("click", () => {
       buttons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      const target = btn.dataset.target;
-
-      alertItems.forEach(item => {
-        const city = item.dataset.city;
-        const show = target === "全体" || city === target || city.indexOf(target) !== -1;
-        item.style.display = show ? "" : "none";
-      });
-
-      topicBlocks.forEach(block => {
-        const city = block.dataset.city;
-        block.style.display = (target === "全体" || city === target) ? "" : "none";
-      });
+      applyTabFilter(btn.dataset.target);
     });
   });
+
+  const initialBtn = document.querySelector(".tab-btn.active");
+  if (initialBtn) applyTabFilter(initialBtn.dataset.target);
 </script>
 </body>
 </html>
