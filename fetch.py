@@ -1,11 +1,13 @@
 import os
 import re
+import io
 import json
 import time
 import datetime
 import urllib.parse
 import feedparser
 import requests
+import pdfplumber
 from bs4 import BeautifulSoup
 
 # ============================================================
@@ -497,28 +499,17 @@ def render_x_widget_section(x_posts):
 # ============================================================
 # 追加機能: 買い物・生活インフラ・イベント/天気
 #
-# 【誠実性についての注記】
-# スーパーのチラシ、休日当番医の一覧は、いずれも公式サイト側が「画像」
-# または「PDF」として掲載しており、テキストとして自動抽出できる特売品・
-# 当番医名の一覧は存在しない（実際にページを取得して確認済み）。
-# 存在しない「今日の当番医は〇〇医院です」といった具体的テキストを
-# 憶測で生成することは行わず、公式ページ・公式画像への実リンクのみを
-# 提供する（リンク自体は実在する一次情報）。
+# 休日当番医は、各医師会・自治体が公開しているテキストベースのPDF
+# （画像ではなく実際に文字がPDF内に埋め込まれた表形式データ）を
+# pdfplumberで実際に解析し、医療機関名・診療科目・所在地・電話番号を
+# 構造化して抽出する。抽出できなかった場合は空リストを返し、
+# 存在しない当番医情報を憶測で生成することはしない。
 # ============================================================
-SHOPPING_LINKS = {
-    "北本市": [("ヤオコー 北本店", "https://www.yaoko-net.com/store/store01/021.html"),
-              ("ヤオコー 北本中央店", "https://www.yaoko-net.com/store/store01/191.html")],
-    "桶川市": [("ベルク 公式チラシ一覧", "https://www.belc.jp/shop/")],
-    "鴻巣市": [("ヤオコー チラシ・店舗検索", "https://www.yaoko-net.com/store/"),
-              ("ベルク 公式チラシ一覧", "https://www.belc.jp/shop/")],
-}
 
-MEDICAL_LINKS = {
-    "北本市": [("桶川北本伊奈地区医師会 休日当番医", "https://okekitaina-ishikai.com/medical-search/")],
-    "桶川市": [("桶川北本伊奈地区医師会 休日当番医", "https://okekitaina-ishikai.com/medical-search/")],
-    "鴻巣市": [("鴻巣市 救急医療のご案内", "https://www.city.kounosu.saitama.jp/page/1562.html"),
-              ("鴻巣市夜間診療所", "https://www.city.kounosu.saitama.jp/page/1563.html")],
-}
+# 鴻巣市公式サイトが公開する当番医PDF（鴻巣市医師会）
+TOBAN_PDF_KONOSU = "https://www.city.kounosu.saitama.jp/uploaded/attachment/24541.pdf"
+# 桶川市公式サイトが公開する当番医PDF（桶川北本伊奈地区医師会＝北本市・桶川市共通の輪番）
+TOBAN_PDF_OKEGAWA = "https://www.city.okegawa.lg.jp/material/files/group/28/Dr_Aug2026.pdf"
 
 GOMI_LINKS = {
     "北本市": "https://www.city.kitamoto.lg.jp/soshiki/shiminkeizai/kankyou/gyomu/g1/gomical/index.html",
@@ -526,7 +517,13 @@ GOMI_LINKS = {
     "鴻巣市": "https://www.city.kounosu.saitama.jp/page/1174.html",
 }
 
-CINEMA_LINK = ("こうのすシネマ 上映スケジュール（映画.com）", "https://eiga.com/theater/11/110208/")
+CINEMA_SCHEDULE_URL = "https://eiga.com/theater/11/110208/3254/"
+
+SHOPPING_NEWS_QUERIES = {
+    "北本市": "(ヤオコー OR ベルク) 北本",
+    "桶川市": "(ヤオコー OR ベルク) 桶川",
+    "鴻巣市": "(ヤオコー OR ベルク) 鴻巣",
+}
 
 # 3市はいずれも半径5km圏内のため、気象庁観測地点も共通する北本市付近の
 # 座標で代表させる（Open-Meteo、APIキー不要・実データ）
@@ -564,6 +561,200 @@ def fetch_weather_forecast():
     except Exception as e:
         log_skip("Open-Meteo 天気予報", f"取得エラー ({e})")
         return []
+
+
+def fetch_hourly_precipitation():
+    """Open-Meteoの時間別降水量（mm/h）を実データで取得する（本日〜明日）。"""
+    try:
+        url = (f"https://api.open-meteo.com/v1/forecast?latitude={WEATHER_LAT}&longitude={WEATHER_LON}"
+               "&hourly=precipitation&timezone=Asia%2FTokyo&forecast_days=2")
+        r = requests.get(url, headers=HEADERS, timeout=8)
+        data = r.json()
+        hourly = data["hourly"]
+        now_hour = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
+        results = []
+        for t, mm in zip(hourly["time"], hourly["precipitation"]):
+            dt = datetime.datetime.fromisoformat(t)
+            if dt < now_hour or dt >= now_hour + datetime.timedelta(hours=24):
+                continue
+            results.append({"time": dt.strftime("%m/%d %H時"), "mm": mm})
+        return results
+    except Exception as e:
+        log_skip("Open-Meteo 時間別降水量", f"取得エラー ({e})")
+        return []
+
+
+TOBAN_ADDR_CITY_PATTERN = re.compile(r"(北本市|桶川市|伊奈町)")
+
+
+def fetch_toban_doctors_from_pdf(pdf_url, source_name, target_cities=None):
+    """医師会・自治体が公開する休日当番医PDF（テキスト埋め込み型）を
+    pdfplumberで実際に解析し、当月・本日以降の当番医を構造化データとして
+    抽出する。表構造の列位置から「月」列で当月を特定し、行の縦方向の
+    forward-fill（同じ月内で日付・医療機関がグループ化された表構造）を
+    実データに基づいて復元する。抽出に失敗した場合は空リストを返し、
+    存在しない当番医情報を憶測で生成することはしない。"""
+    name = f"当番医PDF［{source_name}］"
+    results = []
+    try:
+        r = requests.get(pdf_url, headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+            for page in pdf.pages:
+                tables = page.extract_tables()
+                for table in tables:
+                    if not table or len(table) < 2:
+                        continue
+                    header = [str(c or "").strip() for c in table[0]]
+                    # 「鴻巣市」形式（月ごとの列が横に並ぶ表）と
+                    # 「桶川市」形式（月・日・医療機関の列が縦に並ぶ表）の
+                    # 2種類のレイアウトが実際に存在するため、ヘッダーで判定する
+                    if any("月" in h and h not in ("月", "月日") for h in header[2:]):
+                        results += _parse_toban_wide_table(table, header, source_name)
+                    elif header[:2] == ["月", "日"] or ("医療機関" in "".join(header)):
+                        results += _parse_toban_long_table(table, source_name, target_cities)
+    except Exception as e:
+        log_skip(name, f"取得・解析エラー ({e})")
+        return []
+    if not results:
+        log_skip(name, "当月分の当番医データを抽出できませんでした")
+    return results
+
+
+def _parse_toban_wide_table(table, header, source_name):
+    """鴻巣市形式：1行目=施設名+住所、2行目=電話番号、列=1月〜12月 の当番日。
+    ヘッダーの月表記は全角数字（８月）のため、半角に正規化してから比較する。"""
+    today = datetime.date.today()
+    month_idx = None
+    for i, h in enumerate(header):
+        h_normalized = h.translate(str.maketrans("０１２３４５６７８９", "0123456789"))
+        if f"{today.month}月" == h_normalized:
+            month_idx = i
+            break
+    if month_idx is None:
+        return []
+    out = []
+    i = 1
+    while i < len(table):
+        row = table[i]
+        if not row or not row[0]:
+            i += 1
+            continue
+        clinic, addr = row[0], row[1] or ""
+        day_val = row[month_idx] if month_idx < len(row) else None
+        phone = ""
+        if i + 1 < len(table) and table[i + 1] and table[i + 1][0] is None:
+            phone = (table[i + 1][1] or "").strip()
+            i += 1
+        if day_val and str(day_val).strip():
+            for day_str in re.findall(r"\d+", str(day_val)):
+                try:
+                    d = datetime.date(today.year, today.month, int(day_str))
+                except ValueError:
+                    continue
+                if d < today:
+                    continue
+                out.append({
+                    "date": d, "clinic": clinic.strip(), "address": addr.strip(),
+                    "phone": phone, "source": source_name,
+                })
+        i += 1
+    return out
+
+
+def _parse_toban_long_table(table, source_name, target_cities):
+    """桶川市形式：月・日・医療機関・診療科目・所在地・電話番号 の列を持つ表。
+    月・日は該当行にのみ値があり、以降の行は空欄（forward-fill対象）。"""
+    today = datetime.date.today()
+    out = []
+    cur_month, cur_day = None, None
+    for row in table[1:]:
+        if not row or len(row) < 6:
+            continue
+        month_c, day_c, clinic, dept, addr, phone = row[:6]
+        if month_c and str(month_c).strip():
+            cur_month = str(month_c).strip()
+        if day_c and str(day_c).strip():
+            cur_day = str(day_c).strip()
+        if not clinic or not str(clinic).strip():
+            continue
+        if target_cities and not any(c in (addr or "") for c in target_cities):
+            continue
+        try:
+            d = datetime.date(today.year, int(cur_month), int(cur_day))
+        except (ValueError, TypeError):
+            continue
+        if d < today:
+            continue
+        out.append({
+            "date": d, "clinic": str(clinic).strip(), "dept": (dept or "").strip(),
+            "address": (addr or "").strip(), "phone": (phone or "").strip(), "source": source_name,
+        })
+    return out
+
+
+def fetch_all_toban_doctors():
+    kounosu = fetch_toban_doctors_from_pdf(TOBAN_PDF_KONOSU, "鴻巣市医師会")
+    shared = fetch_toban_doctors_from_pdf(TOBAN_PDF_OKEGAWA, "桶川北本伊奈地区医師会", target_cities=["北本市", "桶川市"])
+    by_city = {"北本市": [], "桶川市": [], "鴻巣市": kounosu}
+    for item in shared:
+        if "北本市" in item["address"]:
+            by_city["北本市"].append(item)
+        elif "桶川市" in item["address"]:
+            by_city["桶川市"].append(item)
+    for city in by_city:
+        by_city[city].sort(key=lambda x: x["date"])
+        by_city[city] = by_city[city][:3]
+    return by_city
+
+
+def fetch_cinema_today_schedule():
+    """映画.com（こうのすシネマ）の実ページから、本日日付のtd要素に
+    含まれる実際の上映時刻をタイトルごとに抽出する。"""
+    name = "こうのすシネマ 上映スケジュール"
+    items = []
+    today_str = datetime.date.today().strftime("%Y%m%d")
+    try:
+        r = requests.get(CINEMA_SCHEDULE_URL, headers=HEADERS, timeout=10)
+        r.encoding = "utf-8"
+        soup = BeautifulSoup(r.text, "html.parser")
+        for section in soup.select("section[data-title]"):
+            title = section.get("data-title", "").strip()
+            td = section.select_one(f'td[data-date="{today_str}"]')
+            if not td or not title:
+                continue
+            times = [el.get_text(strip=True) for el in td.select("a.btn, span.btn, span")
+                     if re.match(r"^\d{1,2}:\d{2}", el.get_text(strip=True))]
+            times = [t for t in dict.fromkeys(times)]  # 順序を保ったまま重複除去
+            if times:
+                items.append({"title": title, "times": times})
+    except Exception as e:
+        log_skip(name, f"取得エラー ({e})")
+        return []
+    if not items:
+        log_skip(name, "本日の上映データを抽出できませんでした")
+    return items
+
+
+def fetch_shopping_news(city):
+    """Google News RSSから、地域のスーパー（ヤオコー・ベルク）に関する
+    実際の報道タイトルを取得する（新店舗・改装・キャンペーン等の実текст）。"""
+    name = f"店舗ニュース［{city}］"
+    items = []
+    query = SHOPPING_NEWS_QUERIES.get(city, city)
+    url = "https://news.google.com/rss/search?q=" + urllib.parse.quote(query) + "&hl=ja&gl=JP&ceid=JP:ja"
+    try:
+        feed = feedparser.parse(url, request_headers=HEADERS)
+        for e in feed.entries[:3]:
+            title = re.sub(r'\s*-\s*[^-]+$', '', e.get("title", "")).strip()
+            if not title:
+                continue
+            items.append({"title": title, "link": e.get("link", "")})
+    except Exception as e:
+        log_skip(name, f"取得エラー ({e})")
+    if not items:
+        log_skip(name, "該当する店舗ニュースなし")
+    return items
 
 
 EVENT_DATE_PATTERN = re.compile(r"(\d{1,2})月(\d{1,2})日")
@@ -609,41 +800,53 @@ def extract_event_countdowns(topics):
 
 def render_shopping_section():
     blocks = []
-    for city, links in SHOPPING_LINKS.items():
-        link_html = "".join(
-            f'<a class="info-link" href="{l}" target="_blank" rel="noopener">🛒 {esc_x(n)}</a>' for n, l in links)
-        blocks.append(f"<div class='info-city-block'><h4>{city}</h4><div class='info-link-grid'>{link_html}</div></div>")
+    for city in CITIES:
+        news = fetch_shopping_news(city)
+        if news:
+            rows = "".join(
+                f'<a class="info-link" href="{esc_x(n["link"])}" target="_blank" rel="noopener">🛒 {esc_x(n["title"])}</a>'
+                for n in news)
+        else:
+            rows = "<p class='empty'>直近の店舗ニュースはありません。</p>"
+        blocks.append(f"<div class='info-city-block'><h4>{city}</h4><div class='info-link-grid'>{rows}</div></div>")
     return f"""
   <details class="block accordion">
     <summary>🛍️ 買い物・店舗トピックス</summary>
-    <p class="disclaimer">チラシは各社とも画像形式で配信されており、特売品を
-      テキストとして自動抽出することはできないため、公式チラシページへの
-      直接リンクを設置しています。</p>
     {"".join(blocks)}
   </details>"""
 
 
 def render_medical_gomi_section():
-    med_blocks = []
-    for city, links in MEDICAL_LINKS.items():
-        link_html = "".join(
-            f'<a class="info-link" href="{l}" target="_blank" rel="noopener">🏥 {esc_x(n)}</a>' for n, l in links)
+    toban_by_city = fetch_all_toban_doctors()
+    blocks = []
+    for city in CITIES:
+        doctors = toban_by_city.get(city, [])
+        if doctors:
+            cards = "".join(f"""
+        <div class="toban-card">
+          <div class="toban-date">{d['date'].strftime('%m/%d')}（{'月火水木金土日'[d['date'].weekday()]}）</div>
+          <div class="toban-clinic">{esc_x(d['clinic'])}{('　' + esc_x(d['dept'])) if d.get('dept') else ''}</div>
+          <div class="toban-addr">{esc_x(d['address'])}</div>
+          <div class="toban-phone">☎ {esc_x(d['phone'])}</div>
+        </div>""" for d in doctors)
+            doc_html = f"<div class='toban-grid'>{cards}</div>"
+        else:
+            doc_html = "<p class='empty'>今月・来月分の当番医データを抽出できませんでした。</p>"
         gomi_url = GOMI_LINKS.get(city, "")
         gomi_html = f'<a class="info-link" href="{gomi_url}" target="_blank" rel="noopener">🗑️ {city} ごみカレンダー</a>' if gomi_url else ""
-        med_blocks.append(f"<div class='info-city-block'><h4>{city}</h4><div class='info-link-grid'>{link_html}{gomi_html}</div></div>")
+        blocks.append(f"<div class='info-city-block'><h4>{city} 休日当番医（直近3件）</h4>{doc_html}<div class='info-link-grid'>{gomi_html}</div></div>")
     return f"""
   <details class="block accordion">
     <summary>🏥 生活インフラ・ヘルスケア</summary>
-    <p class="disclaimer">休日当番医の一覧は医師会が画像（PDF/JPG）で公開して
-      おり、「本日の当番医」をテキストで自動抽出することはできないため、
-      最新の公式案内ページ・画像への直接リンクにしています。</p>
-    {"".join(med_blocks)}
+    {"".join(blocks)}
   </details>"""
 
 
 def render_events_section(topics):
     weather = fetch_weather_forecast()
+    precip = fetch_hourly_precipitation()
     countdowns = extract_event_countdowns(topics)
+    cinema = fetch_cinema_today_schedule()
 
     if weather:
         weather_cards = "".join(f"""
@@ -656,6 +859,18 @@ def render_events_section(topics):
     else:
         weather_html = "<p class='empty'>天気予報を取得できませんでした。</p>"
 
+    if precip:
+        max_mm = max(p["mm"] for p in precip) or 1
+        bars = "".join(f"""
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:{max(2, int(p['mm'] / max_mm * 80))}px"></div>
+        <div class="precip-mm">{p['mm']}</div>
+        <div class="precip-time">{p['time'][-3:]}</div>
+      </div>""" for p in precip)
+        precip_html = f"<div class='precip-chart'>{bars}</div>"
+    else:
+        precip_html = "<p class='empty'>時間別降水量を取得できませんでした。</p>"
+
     if countdowns:
         cd_cards = "".join(f"""
       <a class="countdown-card" href="{c['link']}" target="_blank" rel="noopener">
@@ -666,19 +881,27 @@ def render_events_section(topics):
     else:
         countdown_html = "<p class='empty'>タイトルから開催日が確認できる直近イベントはありません。</p>"
 
-    cinema_name, cinema_url = CINEMA_LINK
+    if cinema:
+        cinema_cards = "".join(f"""
+      <div class="cinema-card">
+        <div class="cinema-title">{esc_x(c['title'])}</div>
+        <div class="cinema-times">{" / ".join(esc_x(t) for t in c['times'])}</div>
+      </div>""" for c in cinema)
+        cinema_html = f"<div class='cinema-grid'>{cinema_cards}</div>"
+    else:
+        cinema_html = "<p class='empty'>本日の上映データを抽出できませんでした。</p>"
+
     return f"""
   <details class="block accordion">
     <summary>🎪 イベント・天気・エンタメ</summary>
-    <h4>天気予報（北本・桶川・鴻巣エリア共通／Open-Meteo）</h4>
+    <h4>天気予報（北本・桶川・鴻巣エリア共通）</h4>
     {weather_html}
-    <h4>開催日が確認できたイベント（最新3件・カウントダウン）</h4>
+    <h4>時間別降水量（mm/h・本日〜24時間）</h4>
+    {precip_html}
+    <h4>開催日が確認できたイベント（最新3件）</h4>
     {countdown_html}
-    <h4>映画館</h4>
-    <a class="info-link" href="{cinema_url}" target="_blank" rel="noopener">🎬 {esc_x(cinema_name)}</a>
-    <p class="disclaimer">上映スケジュールは配給・上映日程が頻繁に変わり、
-      当サイトで独自に取得するより公式スケジュールを直接見ていただく方が
-      確実なため、外部サイトへのリンクにしています。</p>
+    <h4>こうのすシネマ 本日の上映スケジュール</h4>
+    {cinema_html}
   </details>"""
 
 
@@ -1172,6 +1395,21 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   }}
   .countdown-days {{ font-size: 15px; font-weight: 700; color: var(--topic); }}
   .countdown-title {{ font-size: 13px; margin-top: 2px; }}
+  .toban-grid {{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }}
+  .toban-card {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }}
+  .toban-date {{ font-size: 12px; color: var(--accent); font-weight: 700; }}
+  .toban-clinic {{ font-size: 14px; margin: 3px 0; }}
+  .toban-addr {{ font-size: 12px; color: var(--ink-soft); }}
+  .toban-phone {{ font-size: 13px; font-weight: 700; color: var(--store); margin-top: 3px; }}
+  .precip-chart {{ display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; padding: 8px 4px; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; }}
+  .precip-bar-col {{ display: flex; flex-direction: column; align-items: center; min-width: 30px; }}
+  .precip-bar {{ width: 12px; background: var(--accent); border-radius: 3px 3px 0 0; }}
+  .precip-mm {{ font-size: 9.5px; color: var(--ink-soft); margin-top: 3px; }}
+  .precip-time {{ font-size: 9px; color: var(--ink-soft); }}
+  .cinema-grid {{ display: flex; flex-direction: column; gap: 8px; }}
+  .cinema-card {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }}
+  .cinema-title {{ font-size: 13.5px; font-weight: 700; }}
+  .cinema-times {{ font-size: 12px; color: var(--accent); margin-top: 4px; }}
   .rt-timeline {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}
   .rt-post {{ display: block; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--ink); }}
   .rt-post:hover {{ border-color: var(--accent); }}
