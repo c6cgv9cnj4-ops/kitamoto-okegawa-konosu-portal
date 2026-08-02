@@ -320,6 +320,23 @@ def parse_yahoo_relative_time(text):
     return None
 
 
+URL_FRAGMENT_PATTERN = re.compile(r'[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}/\S{4,}')
+LEADING_NOISE_PATTERN = re.compile(r'^[\s　]*(RT[:\s]|返信先[:：].*?\s|[大王？＞>»\-－―]+)+')
+
+
+def dedup_key_for_post(body):
+    """引用RT・まとめbotの再投稿で先頭の煽り文句（「大王？＞」等）だけが異なる
+    ほぼ同一内容の投稿を確実に重複と判定するため、本文中に含まれるURL断片が
+    あればそれを最優先の重複判定キーとして使う（同じ記事へのリンクを含む投稿は
+    文面が多少違っても同一ニュースの可能性が高いため）。URLが無い場合のみ、
+    先頭の煽り文句を除去してから正規化したテキストで判定する。"""
+    url_m = URL_FRAGMENT_PATTERN.search(body)
+    if url_m:
+        return url_m.group(0)
+    cleaned = LEADING_NOISE_PATTERN.sub("", body)
+    return normalize_title_for_dedup(cleaned[:80])
+
+
 def fetch_yahoo_realtime_search(city):
     """Yahoo!リアルタイム検索（X由来データのライセンス提供ページ）から、
     「{city}」を含む投稿を実際に取得する。キーワードでの厳格フィルタと
@@ -349,7 +366,7 @@ def fetch_yahoo_realtime_search(city):
                 continue
             author_el = t.select_one('[class*="Tweet_authorName__"]')
             author = author_el.get_text(strip=True) if author_el else "投稿者不明"
-            dedup_key = normalize_title_for_dedup(body)
+            dedup_key = dedup_key_for_post(body)
             if not dedup_key or dedup_key in seen:
                 continue
             seen.add(dedup_key)
@@ -392,12 +409,7 @@ def render_x_widget_section(x_posts):
     return f"""
   <details class="block accordion">
     <summary>⑤ X（旧Twitter）リアルタイム速報</summary>
-    <p class="disclaimer">X公式の埋め込みタイムラインは実機検証の結果、正常に描画されない
-      ことを確認したため、Yahoo!リアルタイム検索（Xデータのライセンス提供元）を実際に
-      取得し、「火事・事故・遅延・地震」等に関連するキーワードでフィルタしたうえで
-      以下にタイムライン表示しています（雑談・広告等は自動的に除外されます）。</p>
     {timeline_html}
-    <div class="x-link-grid">{buttons}</div>
     <div class="x-link-grid">{buttons}</div>
   </details>"""
 
@@ -623,9 +635,20 @@ def build_dataset():
     train_status = fetch_train_status()
     earthquakes = fetch_earthquake_info()
 
-    x_posts = []
+    x_posts_raw = []
     for city in CITIES:
-        x_posts += fetch_yahoo_realtime_search(city)
+        x_posts_raw += fetch_yahoo_realtime_search(city)
+
+    # 複数都市の検索結果をまたいだ重複（同じ投稿が複数市名に言及し、
+    # 別々の検索クエリで重複取得されるケース）も、ここで最終的に排除する
+    x_seen = set()
+    x_posts = []
+    for p in x_posts_raw:
+        key = dedup_key_for_post(p["body"])
+        if not key or key in x_seen:
+            continue
+        x_seen.add(key)
+        x_posts.append(p)
 
     return alerts, topics, train_status, earthquakes, x_posts
 
