@@ -986,6 +986,45 @@ def load_coffee_tracker():
         return None
 
 
+def render_rating_bar(rating_str):
+    """★評価（実数値）を0-5レンジのプログレスバーとして可視化する。
+    表示するのはGoogleが公開している総合評価の数値そのものであり、
+    非公開の★内訳（5/4/3/2/1件数）を推測で埋めるものではない。"""
+    try:
+        rating = float(rating_str)
+    except (TypeError, ValueError):
+        return ""
+    pct = max(0, min(100, rating / 5 * 100))
+    return f"""<div class="ct-rating-bar"><div class="ct-rating-bar-fill" style="width:{pct:.0f}%"></div></div>"""
+
+
+def render_trend_svg(history, key, color):
+    """coffee_tracker.json内の実履歴データ（実際に確認した日付・数値）のみを
+    プロットするミニ折れ線グラフ。存在しない過去の値を補間・創作しない。
+    記録が1点しかない場合は「データ蓄積中」の点のみを正直に表示する。"""
+    vals = []
+    for h in history:
+        try:
+            vals.append(float(h[key]))
+        except (KeyError, TypeError, ValueError):
+            continue
+    if not vals:
+        return "<p class='ct-trend-empty'>推移データなし</p>"
+    w, hpx = 160, 36
+    if len(vals) == 1:
+        return (f"<svg class='ct-trend-svg' viewBox='0 0 {w} {hpx}'>"
+                f"<circle cx='{w/2}' cy='{hpx/2}' r='3' fill='{color}'/></svg>"
+                f"<div class='ct-trend-note'>データ蓄積中（実測1点）</div>")
+    min_v, max_v = min(vals), max(vals)
+    span = (max_v - min_v) or 1
+    step = w / (len(vals) - 1)
+    points = " ".join(f"{i*step:.1f},{hpx - (v - min_v) / span * (hpx - 4) - 2:.1f}" for i, v in enumerate(vals))
+    dot = f"{(len(vals)-1)*step:.1f},{hpx - (vals[-1] - min_v) / span * (hpx - 4) - 2:.1f}"
+    return (f"<svg class='ct-trend-svg' viewBox='0 0 {w} {hpx}'>"
+            f"<polyline points='{points}' fill='none' stroke='{color}' stroke-width='2'/>"
+            f"<circle cx='{dot.split(',')[0]}' cy='{dot.split(',')[1]}' r='2.5' fill='{color}'/></svg>")
+
+
 def render_coffee_shop_card(shop):
     history = shop.get("history", [])
     if not history:
@@ -1024,6 +1063,7 @@ def render_coffee_shop_card(shop):
         <span class="rdb-point">★{esc_x(latest['rating'])}</span>
         <span class="rdb-reviews">{latest['reviews']}件</span>
       </div>
+      {render_rating_bar(latest['rating'])}
       <div class="ct-badge-row">{badges_html}</div>
       {ann_html}
       <details class="ct-detail-accordion">
@@ -1033,6 +1073,10 @@ def render_coffee_shop_card(shop):
           <tr><th>最新（{esc_x(latest['date'])}）</th><td>★{esc_x(latest['rating'])} / {latest['reviews']}件</td></tr>
           <tr><th>推移差分</th><td>{diff_text}</td></tr>
         </table>
+        <div class="ct-trend-row">
+          <div class="ct-trend-col"><div class="ct-trend-label">★評価の推移</div>{render_trend_svg(history, 'rating', '#ffb347')}</div>
+          <div class="ct-trend-col"><div class="ct-trend-label">口コミ数の推移</div>{render_trend_svg(history, 'reviews', '#7ec8ff')}</div>
+        </div>
         <p class="ct-note">※ 星の分布（★5/4/3/2/1件数）はGoogle側が数値を公開していないため未取得です（憶測で埋めていません）。</p>
         <div class="ct-reviews-label">直近の目立つクチコミ2件</div>
         <ul class="ct-reviews">{reviews_html}</ul>
@@ -1787,6 +1831,14 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .rdb-point {{ color: #ffb347; font-weight: 700; font-size: 12px; }}
   .rdb-reviews {{ color: var(--ink-soft); font-size: 11px; }}
 
+  .ct-rating-bar {{ width: 100%; height: 5px; background: #1a1e26; border-radius: 999px; overflow: hidden; margin: -4px 0 4px; }}
+  .ct-rating-bar-fill {{ height: 100%; background: linear-gradient(90deg, #ffb347, #ff8c42); border-radius: 999px; }}
+  .ct-trend-row {{ display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }}
+  .ct-trend-col {{ flex: 1; min-width: 130px; }}
+  .ct-trend-label {{ font-size: 10.5px; color: var(--ink-soft); margin-bottom: 2px; }}
+  .ct-trend-svg {{ width: 100%; height: 36px; display: block; }}
+  .ct-trend-note {{ font-size: 10px; color: var(--ink-soft); }}
+  .ct-trend-empty {{ font-size: 11px; color: var(--ink-soft); margin: 0; }}
   .ct-badge-row {{ display: flex; gap: 6px; flex-wrap: wrap; margin-top: -4px; }}
   .ct-badge {{ background: #1a2b3d; color: #7ec8ff; border-radius: 999px; padding: 3px 9px; font-size: 10.5px; font-weight: 700; }}
   .ct-badge-muted {{ background: #14171c; color: var(--ink-soft); }}
