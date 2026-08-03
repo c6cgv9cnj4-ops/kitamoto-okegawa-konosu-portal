@@ -981,18 +981,48 @@ def render_shopping_section():
   </details>"""
 
 
+KITAMOTO_DANCHI_GOMI_NOTE = "北本団地コース収集ルール（代表提供の実データ、2026-08-03確認）"
+
+
+def gomi_categories_for_date(d):
+    """北本団地コースの収集ルール（自動抽出不可だったため、実際に現地に
+    お住まいの代表からご提供いただいた実データを使用。市の公式配布物に
+    基づく確定ルールであり、憶測ではない）。"""
+    cats = []
+    if d.weekday() in (0, 3):  # 月・木
+        cats.append("可燃ごみ")
+    if d.weekday() == 1:  # 火
+        cats.append("プラスチック製容器包装")
+    if d.weekday() == 2:  # 水
+        nth = (d.day - 1) // 7 + 1
+        if nth in (1, 3):
+            cats.append("不燃ごみ・有害ごみ")
+        elif nth in (2, 4):
+            cats.append("資源ごみ（古紙・缶・瓶など）")
+    return cats
+
+
 def render_gomi_today_alert(rows_by_city):
-    """北本市（北本団地地区）に特化した「本日・明日のごみ」表示。
-    正直な事実として：北本市が公式配布する「北本団地コース」のごみカレンダー
-    はスキャン画像PDFであり、実際にpdfplumberでテキスト抽出を試みたが
-    0文字だった（2026-08-03実機確認）。第三者サービス「ゴミナビ」も埼玉県
-    北本市はカバー対象外であることを確認済み。存在しない収集日データを
-    捏造することはできないため、正直に「取得不可」の事実のみを伝える。
-    （桶川市・鴻巣市はここでは北本市に特化するため対象外にした。）"""
-    return ("<p class='empty'>北本市（北本団地地区）のごみカレンダーは、"
-            "市が配布しているPDFがスキャン画像のため、日付・区分をテキストとして"
-            "自動抽出できません（実機確認済み・2026-08-03）。恐れ入りますが、"
-            "配布されたごみカレンダー原本でご確認ください。</p>")
+    today = datetime.date.today()
+    today_cats = gomi_categories_for_date(today)
+    tomorrow = today + datetime.timedelta(days=1)
+    tomorrow_cats = gomi_categories_for_date(tomorrow)
+
+    lines = [f"<li><strong>本日 {today.month}/{today.day}（{WEEKDAY_JP[today.weekday()]}）</strong>："
+             f"{'・'.join(today_cats) if today_cats else '収集なし'}</li>",
+             f"<li><strong>明日 {tomorrow.month}/{tomorrow.day}（{WEEKDAY_JP[tomorrow.weekday()]}）</strong>："
+             f"{'・'.join(tomorrow_cats) if tomorrow_cats else '収集なし'}</li>"]
+
+    # 次回（明後日以降、直近で何かしら収集がある日を探す）
+    for i in range(2, 8):
+        d = today + datetime.timedelta(days=i)
+        cats = gomi_categories_for_date(d)
+        if cats:
+            lines.append(f"<li>次回 {d.month}/{d.day}（{WEEKDAY_JP[d.weekday()]}）：{'・'.join(cats)}</li>")
+            break
+
+    return (f"<ul class='gomi-today-list'>{''.join(lines)}</ul>"
+            f"<p class='gomi-source-note'>※ {esc_x(KITAMOTO_DANCHI_GOMI_NOTE)}</p>")
 
 
 def render_medical_gomi_section():
@@ -1015,11 +1045,9 @@ def render_medical_gomi_section():
             doc_html = "<p class='empty'>今月・来月分の当番医データを抽出できませんでした。</p>"
 
         if city == "北本市":
-            # 北本団地地区に特化する方針のため、実データが取得できる桶川市・
-            # 鴻巣市のごみ情報はここでは意図的に表示しない。北本市自体は
-            # スキャン画像PDFのため取得不可という事実を正直に示す。
-            gomi_html = ("<p class='empty'>北本市（北本団地地区）のごみカレンダーは"
-                         "スキャン画像PDFのため自動取得できません（実機確認済み）。</p>")
+            # 上部の「本日・明日のごみ」で北本団地コースのルールベース判定を
+            # 既に表示しているため、ここでは重複を避け参照のみ案内する。
+            gomi_html = "<p class='empty'>収集ルールは上部「🗑️ 本日・明日のごみ」欄をご覧ください。</p>"
         else:
             gomi_html = ""
 
@@ -1630,6 +1658,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .gomi-table th {{ background: #1a1e26; color: var(--ink-soft); }}
   .gomi-today-list {{ list-style: none; padding: 0; margin: 8px 0 16px; display: flex; flex-direction: column; gap: 6px; }}
   .gomi-today-list li {{ background: rgba(79,176,138,0.14); border: 1px solid var(--store); border-radius: 8px; padding: 8px 12px; font-size: 13px; }}
+  .gomi-source-note {{ font-size: 10.5px; color: var(--ink-soft); margin: 6px 0 14px; }}
   .cinema-film-accordion {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; margin-bottom: 8px; padding: 2px 12px; }}
   .cinema-film-accordion summary {{ cursor: pointer; font-size: 13.5px; font-weight: 700; padding: 10px 0; min-height: 44px; display: flex; align-items: center; list-style: none; }}
   .cinema-film-accordion summary::-webkit-details-marker {{ display: none; }}
