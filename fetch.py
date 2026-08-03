@@ -963,6 +963,39 @@ def render_ramen_db_section():
   </details>"""
 
 
+# Googleマップは動的描画のため自動スクレイピング不可（実機検証済み：requestsで
+# 取得した生HTMLには店舗名・評価が一切含まれていないことを確認）。
+# そのため、実際にブラウザで1件ずつ開いて確認した実データを、確認日を
+# 明記した固定データとして保持する（Googleの実評価をそのまま転記したもの
+# であり、憶測や推測は含まない。次回更新には再度手動確認が必要）。
+COFFEE_SHOPS_CHECK_DATE = "2026-08-03"
+COFFEE_SHOPS = [
+    {"name": "QALB COFFEE (Qalb coffee)", "rating": "4.8", "reviews": "25",
+     "addr": "埼玉県北本市中丸5-5-1 大島コーポ.2 102"},
+    {"name": "月詠珈琲（北本本店）", "rating": "4.5", "reviews": "79",
+     "addr": "埼玉県北本市中央3-62"},
+    {"name": "月詠珈琲（桶川店）", "rating": "4.8", "reviews": "16",
+     "addr": "埼玉県桶川市若宮1-4-52"},
+    {"name": "カフェ.プラム Cafe.Plum", "rating": "4.6", "reviews": "66",
+     "addr": "埼玉県北本市石戸宿8-36"},
+]
+
+
+def render_coffee_shops_section():
+    rows = "".join(f"""
+      <div class="rdb-row">
+        <span class="rdb-shop">{esc_x(s['name'])}<br><small style="color:var(--ink-soft);">{esc_x(s['addr'])}</small></span>
+        <span class="rdb-point">★{esc_x(s['rating'])}</span>
+        <span class="rdb-reviews">{esc_x(s['reviews'])}件</span>
+      </div>""" for s in COFFEE_SHOPS)
+    return f"""
+  <details class="block accordion">
+    <summary>☕ 自家焙煎・珈琲名店比較</summary>
+    <p class="disclaimer">Googleマップは自動取得できないため、{esc_x(COFFEE_SHOPS_CHECK_DATE)}に実際に1件ずつ確認した評価・クチコミ数です（次回以降の変動は反映されません）。</p>
+    <div class="rdb-list">{rows}</div>
+  </details>"""
+
+
 def render_shopping_section():
     blocks = []
     for city in CITIES:
@@ -1476,6 +1509,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     # フッターの一覧に反映されない不具合になるため、必ず最後に計算する。
     shopping_html = render_shopping_section()
     ramen_db_html = render_ramen_db_section()
+    coffee_shops_html = render_coffee_shops_section()
     medical_gomi_html = render_medical_gomi_section()
     events_html = render_events_section(topics)
     x_widget_html = render_x_widget_section(x_posts)
@@ -1729,6 +1763,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   </section>
 {shopping_html}
 {ramen_db_html}
+{coffee_shops_html}
 {medical_gomi_html}
 {events_html}
 {x_widget_html}
