@@ -31,6 +31,34 @@
   .refresh-btn { display: inline-flex; align-items: center; min-height: 32px; background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 5px 12px; font-size: 11.5px; font-weight: 700; text-decoration: none; }
   .refresh-btn:hover { background: var(--accent); color: #0c1116; }
 
+  .toptabs { display: flex; gap: 6px; margin: 0 0 18px; flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 10; border-bottom: 1px solid var(--rule); }
+  .toptab-btn { flex: 1; min-width: 90px; min-height: 44px; background: var(--bg-raised); color: var(--ink-soft); border: 1px solid var(--rule); border-radius: 8px; font-size: 12.5px; font-weight: 700; padding: 8px 6px; }
+  .toptab-btn.active { background: var(--accent); color: #0c1116; border-color: var(--accent); }
+  .top-tab-panel { display: none; }
+  .top-tab-panel.active { display: block; }
+
+  .mk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .mk-card { background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; }
+  .mk-error { opacity: 0.7; }
+  .mk-label { font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }
+  .mk-value { font-size: 17px; font-weight: 700; }
+  .mk-change { font-size: 11.5px; margin-top: 2px; }
+  .mk-up { color: #4ade80; }
+  .mk-down { color: #f87171; }
+
+  .stock-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .stock-card { background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
+  .stock-head { display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+  .stock-code { background: var(--bg); border-radius: 4px; padding: 1px 6px; font-size: 11px; color: var(--accent); font-weight: 700; }
+  .stock-name { font-weight: 700; font-size: 13.5px; }
+  .stock-price { margin-bottom: 8px; display: flex; gap: 10px; align-items: baseline; }
+  .stock-add-form { display: flex; gap: 8px; }
+  .stock-add-form input { flex: 1; min-height: 44px; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; color: var(--ink); padding: 0 12px; font-size: 13px; }
+  .stock-add-form button { min-height: 44px; background: var(--accent); color: #0c1116; border: none; border-radius: 8px; padding: 0 14px; font-weight: 700; font-size: 12.5px; }
+  .stock-watch-extra { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .stock-watch-extra-item { display: flex; justify-content: space-between; align-items: center; background: #14171c; border: 1px dashed var(--rule); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--ink-soft); }
+  .stock-watch-extra-item button { background: none; border: none; color: #f87171; font-size: 12px; }
+
   .tabs { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }
   .tab-btn {
     background: var(--bg-raised);
@@ -217,6 +245,7 @@
   .lifeline-ok { font-size: 13px; color: var(--store); }
   .rt-timeline { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .rt-post { display: block; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--ink); }
+  .rt-post-nolink { cursor: text; user-select: text; opacity: 0.85; }
   .rt-post:hover { border-color: var(--accent); }
   .rt-post-head { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }
   .rt-post-city { background: rgba(90,169,230,0.18); color: var(--accent); border-radius: 4px; padding: 1px 6px; font-weight: 700; }
@@ -240,11 +269,19 @@
 <div class="page">
   <header class="top">
     <h1>近隣3市 地域ポータル</h1>
-    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-03 14:26 JST
+    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-08-03 15:42 JST
       <a class="refresh-btn" href="https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions/workflows/update.yml" target="_blank" rel="noopener">🔄 今すぐ更新（GitHub Actionsを開く）</a>
     </div>
   </header>
 
+  <div class="toptabs">
+    <button class="toptab-btn active" data-toptarget="local">地域ポータル</button>
+    <button class="toptab-btn" data-toptarget="news">主要紙・海外ニュース</button>
+    <button class="toptab-btn" data-toptarget="market">株・市場速報</button>
+    <button class="toptab-btn" data-toptarget="watchlist">My銘柄スカウター</button>
+  </div>
+
+  <div id="top-panel-local" class="top-tab-panel active">
   <section class="block">
     <h2>① 鉄道運行情報（JR高崎線・宇都宮線・湘南新宿ライン・上野東京ライン）</h2>
     <div class='train-grid'>
@@ -252,25 +289,25 @@
         <div class="train-line">JR高崎線</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月3日 14時24分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月3日 15時40分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/46/46" target="_blank" rel="noopener">
         <div class="train-line">JR宇都宮線</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月3日 14時25分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月3日 15時41分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/25/0" target="_blank" rel="noopener">
         <div class="train-line">JR湘南新宿ライン</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月3日 14時24分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月3日 15時41分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/627/0" target="_blank" rel="noopener">
         <div class="train-line">JR上野東京ライン</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">8月3日 14時25分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">8月3日 15時41分更新｜Yahoo!路線情報</div>
       </a></div>
   </section>
 
@@ -283,66 +320,16 @@
       <div class="precip-bar-col">
         <div class="precip-bar" style="height:2px"></div>
         <div class="precip-mm">0.0</div>
-        <div class="precip-time">05時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">06時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">07時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">08時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">09時</div>
+        <div class="precip-time">15時</div>
       </div>
       <div class="precip-bar-col">
         <div class="precip-bar" style="height:80px"></div>
         <div class="precip-mm">0.1</div>
-        <div class="precip-time">10時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">11時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">12時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">13時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">14時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">15時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
         <div class="precip-time">16時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
+        <div class="precip-bar" style="height:80px"></div>
+        <div class="precip-mm">0.1</div>
         <div class="precip-time">17時</div>
       </div>
       <div class="precip-bar-col">
@@ -399,128 +386,178 @@
         <div class="precip-bar" style="height:2px"></div>
         <div class="precip-mm">0.0</div>
         <div class="precip-time">04時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">05時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">06時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">07時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">08時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">09時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">10時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">11時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">12時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">13時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">14時</div>
       </div></div>
     <h4>時間別気温（℃・本日〜24時間）</h4>
     <div class='precip-chart'>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:31px"></div>
-        <div class="precip-mm">22.7℃</div>
-        <div class="precip-time">05時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:35px"></div>
-        <div class="precip-mm">22.9℃</div>
-        <div class="precip-time">06時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:39px"></div>
-        <div class="precip-mm">23.1℃</div>
-        <div class="precip-time">07時</div>
-      </div>
-      <div class="precip-bar-col">
         <div class="temp-bar" style="height:42px"></div>
-        <div class="precip-mm">23.3℃</div>
-        <div class="precip-time">08時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:37px"></div>
-        <div class="precip-mm">23.0℃</div>
-        <div class="precip-time">09時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:40px"></div>
-        <div class="precip-mm">23.2℃</div>
-        <div class="precip-time">10時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:48px"></div>
-        <div class="precip-mm">23.6℃</div>
-        <div class="precip-time">11時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:59px"></div>
-        <div class="precip-mm">24.2℃</div>
-        <div class="precip-time">12時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:72px"></div>
-        <div class="precip-mm">24.9℃</div>
-        <div class="precip-time">13時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:80px"></div>
-        <div class="precip-mm">25.3℃</div>
-        <div class="precip-time">14時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:80px"></div>
-        <div class="precip-mm">25.3℃</div>
+        <div class="precip-mm">25.8℃</div>
         <div class="precip-time">15時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:76px"></div>
-        <div class="precip-mm">25.1℃</div>
+        <div class="temp-bar" style="height:38px"></div>
+        <div class="precip-mm">25.3℃</div>
         <div class="precip-time">16時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:74px"></div>
-        <div class="precip-mm">25.0℃</div>
+        <div class="temp-bar" style="height:31px"></div>
+        <div class="precip-mm">24.5℃</div>
         <div class="precip-time">17時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:68px"></div>
-        <div class="precip-mm">24.7℃</div>
+        <div class="temp-bar" style="height:28px"></div>
+        <div class="precip-mm">24.2℃</div>
         <div class="precip-time">18時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:63px"></div>
-        <div class="precip-mm">24.4℃</div>
+        <div class="temp-bar" style="height:26px"></div>
+        <div class="precip-mm">24.0℃</div>
         <div class="precip-time">19時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:57px"></div>
-        <div class="precip-mm">24.1℃</div>
+        <div class="temp-bar" style="height:25px"></div>
+        <div class="precip-mm">23.8℃</div>
         <div class="precip-time">20時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:52px"></div>
-        <div class="precip-mm">23.8℃</div>
+        <div class="temp-bar" style="height:23px"></div>
+        <div class="precip-mm">23.6℃</div>
         <div class="precip-time">21時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:44px"></div>
-        <div class="precip-mm">23.4℃</div>
+        <div class="temp-bar" style="height:20px"></div>
+        <div class="precip-mm">23.3℃</div>
         <div class="precip-time">22時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:39px"></div>
-        <div class="precip-mm">23.1℃</div>
+        <div class="temp-bar" style="height:17px"></div>
+        <div class="precip-mm">22.9℃</div>
         <div class="precip-time">23時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:29px"></div>
+        <div class="temp-bar" style="height:14px"></div>
         <div class="precip-mm">22.6℃</div>
         <div class="precip-time">00時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:20px"></div>
-        <div class="precip-mm">22.1℃</div>
+        <div class="temp-bar" style="height:13px"></div>
+        <div class="precip-mm">22.4℃</div>
         <div class="precip-time">01時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:11px"></div>
-        <div class="precip-mm">21.6℃</div>
+        <div class="temp-bar" style="height:9px"></div>
+        <div class="precip-mm">22.0℃</div>
         <div class="precip-time">02時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:5px"></div>
-        <div class="precip-mm">21.3℃</div>
+        <div class="temp-bar" style="height:6px"></div>
+        <div class="precip-mm">21.7℃</div>
         <div class="precip-time">03時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:2px"></div>
-        <div class="precip-mm">21.0℃</div>
+        <div class="temp-bar" style="height:3px"></div>
+        <div class="precip-mm">21.3℃</div>
         <div class="precip-time">04時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">20.9℃</div>
+        <div class="precip-time">05時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">21.2℃</div>
+        <div class="precip-time">06時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:9px"></div>
+        <div class="precip-mm">22.0℃</div>
+        <div class="precip-time">07時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:20px"></div>
+        <div class="precip-mm">23.3℃</div>
+        <div class="precip-time">08時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:33px"></div>
+        <div class="precip-mm">24.8℃</div>
+        <div class="precip-time">09時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:46px"></div>
+        <div class="precip-mm">26.3℃</div>
+        <div class="precip-time">10時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:57px"></div>
+        <div class="precip-mm">27.5℃</div>
+        <div class="precip-time">11時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:66px"></div>
+        <div class="precip-mm">28.5℃</div>
+        <div class="precip-time">12時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:73px"></div>
+        <div class="precip-mm">29.4℃</div>
+        <div class="precip-time">13時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:80px"></div>
+        <div class="precip-mm">30.1℃</div>
+        <div class="precip-time">14時</div>
       </div></div>
   </section>
 
@@ -553,16 +590,6 @@
       <div class="item-title">⚠️ 特殊詐欺予兆電話情報（7月28日分）オレオレ詐欺に注意！</div>
       
       <div class="loc-badge">📍 鴻巣警察署 新着情報管内</div>
-    </a>
-    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE9nZ0VsaGRlRGNUTnhjM2tSeUd4WWNOXzZ2dy1QUGo0dUFBS05oN25kWUs5NWs4SnVsWTJCVzA3b0d2U0N1SkJtbHlPQ3FSeWM3UUZ3UkdQSWZtWGtsRWt4NGNNTTd3LXUxb29kMEVLbW1kZUR6ZGx3Mm1wdF9oM2c?oc=5" target="_blank" rel="noopener">
-      <div class="item-badges">
-        <span class="badge city-badge">北本市</span>
-        <span class="badge cat-alert">防犯・防災</span>
-        <span class="item-meta">2026-07-31｜Google News</span>
-      </div>
-      <div class="item-title">🚨 「死にたい？」などと脅し…10代女性に性的暴行加えようとケガさせたか 32歳の男逮捕（日テレNEWS NNN）</div>
-      
-      <div class="loc-badge">📍 北本市エリア</div>
     </a>
     <a class="item " data-city="鴻巣市" href="https://www.police.pref.saitama.lg.jp/p0140/2026jidouonseikaisi.html" target="_blank" rel="noopener">
       <div class="item-badges">
@@ -604,13 +631,23 @@
       
       <div class="loc-badge">📍 北本市エリア</div>
     </a>
+    <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE9nZ0VsaGRlRGNUTnhjM2tSeUd4WWNOXzZ2dy1QUGo0dUFBS05oN25kWUs5NWs4SnVsWTJCVzA3b0d2U0N1SkJtbHlPQ3FSeWM3UUZ3UkdQSWZtWGtsRWt4NGNNTTd3LXUxb29kMEVLbW1kZUR6ZGx3Mm1wdF9oM2c?oc=5" target="_blank" rel="noopener">
+      <div class="item-badges">
+        <span class="badge city-badge">北本市</span>
+        <span class="badge cat-alert">防犯・防災</span>
+        <span class="item-meta">2026-07-29｜Google News</span>
+      </div>
+      <div class="item-title">🚨 「死にたい？」などと脅し…10代女性に性的暴行加えようとケガさせたか 32歳の男逮捕（日テレNEWS NNN）</div>
+      
+      <div class="loc-badge">📍 北本市エリア</div>
+    </a>
     <a class="item " data-city="北本市" href="https://news.google.com/rss/articles/CBMiZkFVX3lxTE9yNzVJeGE1ODlHNkxIbWlLRzVLQjZtX1dTZG0tOGJKNGtsa09lWG5HbFh5TnhHSGZZSEh2VDdrdU8yV3pCRlpqZXI3NTJBVzhKT0poYzJNMFB1bUxET0s2a2UzaFFxQQ?oc=5" target="_blank" rel="noopener">
       <div class="item-badges">
         <span class="badge city-badge">北本市</span>
         <span class="badge cat-alert">防犯・防災</span>
         <span class="item-meta">2026-07-29｜Google News</span>
       </div>
-      <div class="item-title">🚨 性的暴行しようと…女性が引き込まれる 深夜の草むら、恐怖の5分間 襲った男逮捕、「死にたいか」と負傷させた疑い 母が通報 全治1カ月の女性、通話中の携帯を見せると…男が逃げていた「していません」｜埼玉新聞｜埼玉の最新ニュース・スポーツ・地域の話題 - saitama</div>
+      <div class="item-title">🚨 性的暴行しようと…女性が引き込まれる 深夜の草むら、恐怖の5分間 襲った男逮捕、「死にたいか」と負傷させた疑い 母が通報 全治1カ月の女性、通話中の携帯を見せると…男が逃げていた「していません」｜埼玉新聞｜埼玉の最新ニュース・スポーツ・地域の話題</div>
       
       <div class="loc-badge">📍 北本市エリア</div>
     </a>
@@ -693,16 +730,6 @@
         <span class="item-meta">2026-07-29｜Google News</span>
       </div>
       <div class="item-title">🎉 【桶川市】デカ盛り唐揚げ専門店「キッチンバスストップ桶川店」がオープンすることが分かりました！</div>
-      
-      <div class="loc-badge">📍 桶川市エリア</div>
-    </a>
-    <a class="item " data-city="桶川市" href="https://news.google.com/rss/articles/CBMiakFVX3lxTFBiWVVHbkZWMGphbHZLU1RoOWNocHc2VUFoSGVTLW1NUUgzMjZaNjRPaVB3ZUFBXzZfUlNPQUx4Y09kTjRsLV9Yclpsd3hxZHlFbDVNTkNqRVQzWE5TMExleDJVcDEzLTlDenc?oc=5" target="_blank" rel="noopener">
-      <div class="item-badges">
-        <span class="badge city-badge">桶川市</span>
-        <span class="badge cat-topic">地域トピック</span>
-        <span class="item-meta">2026-07-26｜Google News</span>
-      </div>
-      <div class="item-title">📍 【桶川市】大注目！どうぶつの森『しずえさん』がベニバナウォーク桶川に登場します！！</div>
       
       <div class="loc-badge">📍 桶川市エリア</div>
     </a></div>
@@ -1291,55 +1318,7 @@
 
   <details class="block accordion">
     <summary>⑤ X（旧Twitter）リアルタイム速報</summary>
-    <div class='rt-timeline'>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E5%8C%97%E6%9C%AC%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">北本市</span><span class="rt-post-author">埼玉県の本屋・書店「小声書房」｜新刊注文＆買取｜１冊からでも大歓迎✨</span><span class="rt-post-time">13:01</span></div>
-        <div class="rt-post-body">小声書房979日目オープンしたことを小さな声でお伝えします。気温が少し下がり、過ごしやすい一日になりそうな 北本市 です。これくらいの気候が続いて欲しいですね。本日は20時まで。皆様のご来店をお待ちしてます。 pic.x.com/YhKBoMuOzt</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E5%8C%97%E6%9C%AC%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">北本市</span><span class="rt-post-author">アンスリウム2</span><span class="rt-post-time">10:38</span></div>
-        <div class="rt-post-body">また埼玉か( *｀ω´)ペルー系か？  空き地で10代の女性の首を絞めて「死にたい？」などと脅迫　強姦未遂で川畑アレキサンダー（32）を逮捕送検　埼玉県 北本市 （動画あり） xsokuhou.net/archives/16482…</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E5%8C%97%E6%9C%AC%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">北本市</span><span class="rt-post-author">月詠珈琲</span><span class="rt-post-time">10:26</span></div>
-        <div class="rt-post-body">お盆休みのお知らせ🙇 月詠珈琲北本店、桶川店ともに8月11日-8月14日まで誠に勝手ながらお休みをいただきます。ご迷惑、ご不便をお掛けし大変申し訳ございません。何卒、ご容赦いただけますようよろしくお願い申し上げます。 # 北本市 # 喫茶店 # カフェ # 珈琲 # お盆 pic.x.com/GH3ANbwS5f</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E5%8C%97%E6%9C%AC%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">北本市</span><span class="rt-post-author">六四天安門事件（1989年6月4日）</span><span class="rt-post-time">0:49</span></div>
-        <div class="rt-post-body">🔴 2026.7.29 日テレNEWS @ntv_news 【32歳の男逮捕】｢死にたい？｣などと脅し…10代女性に性的暴行加えようとケガさせたか youtu.be/dZPABIkgNtU 埼玉県 北本市 川畑アレキサンダー(32)</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E5%8C%97%E6%9C%AC%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">北本市</span><span class="rt-post-author">六四天安門事件（1989年6月4日）</span><span class="rt-post-time">0:46</span></div>
-        <div class="rt-post-body">🔴 2026.7.29（日テレNEWS NNN） 「死にたい？」などと脅し…10代女性に性的暴行加えようとケガさせたか　32歳の男逮捕 news.ntv.co.jp/category/socie… 🟡埼玉県 北本市 で10代の女性を「死にたい？」と脅し、性的暴行を加えようとして全治1ヶ月のケガをさせた疑いで、川畑アレキ</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E6%A1%B6%E5%B7%9D%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">桶川市</span><span class="rt-post-author">松井@日本一賞味期限切れを売るスーパー</span><span class="rt-post-time">9:15</span></div>
-        <div class="rt-post-body">熊本地震被災地へお水180ケースなど寄付させていただきます。  埼玉県 桶川市 の建築会社様が手弁当で運んでくださります。  遠路よろしくおねがいします🙇 pic.x.com/RLqn3z3Sca</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E6%A1%B6%E5%B7%9D%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">桶川市</span><span class="rt-post-author">せなこ</span><span class="rt-post-time">7:37</span></div>
-        <div class="rt-post-body">お腹すいたー誰かご飯行こ 桶川市 か伊奈町らへん出没します✨  シーシャ 写真で伝えたい私の世界</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E6%A1%B6%E5%B7%9D%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">桶川市</span><span class="rt-post-author">TKO木本武宏トークライブ in 桶川【公式】10/3土 開催</span><span class="rt-post-time">8月1日(土) 21:47</span></div>
-        <div class="rt-post-body">🌟勝手にコラボ🌟 # 木本さんと桶川 # TKO木本武宏トークライブin桶川 カードと一緒に巡って、イベントと # 桶川 を勝手にPR📢 # 桶川市 は地域振興を目的に日本クレーンゲーム協会と包括連携協定を結んでいます。 # 道の駅べに花の郷おけがわ にも面白いゲームがありました！ぜひ挑戦してみてね😆 pic.x.co</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E6%A1%B6%E5%B7%9D%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">桶川市</span><span class="rt-post-author">ア・プリヲロ</span><span class="rt-post-time">8月1日(土) 18:02</span></div>
-        <div class="rt-post-body"># さすがにお前らが住んでる県の市町村15個答えれるよな さいたま市 熊谷市 川越市 上尾市 川口市 春日部市 朝霞市 越谷市 桶川市 蓮田市 鴻巣市 桜木町 ■■■ ■■■ ■■■☚住んでる周辺のため</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E9%B4%BB%E5%B7%A3%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">鴻巣市</span><span class="rt-post-author">中西こうじろう</span><span class="rt-post-time">12分前</span></div>
-        <div class="rt-post-body">今日のランチ 肉うどん あたらしや（ 鴻巣市 鎌塚1-2-5） # 鴻巣市 # うどん # ランチ pic.x.com/8dEV7sljMA</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E9%B4%BB%E5%B7%A3%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">鴻巣市</span><span class="rt-post-author">SUM-Y</span><span class="rt-post-time">12:37</span></div>
-        <div class="rt-post-body">返信先: @ HoneySpecialP 自分らで言っているじゃないか自業自得だよ。 個人的に花火大会でブルーインパルスが飛んでくるのを 鴻巣市 の共産党市議が止めたさせた件、忘れてないぞ。 pic.x.com/jtif391h6e</div>
-      </a>
-      <a class="rt-post" href="https://search.yahoo.co.jp/realtime/search?p=%E9%B4%BB%E5%B7%A3%E5%B8%82" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">鴻巣市</span><span class="rt-post-author">撮影スタジオ付の模型製作スペース・プラスタ PLASTa (埼玉県鴻巣市)</span><span class="rt-post-time">11:17</span></div>
-        <div class="rt-post-body">8/3(月) 埼玉県 # 鴻巣市 のPLASTa 18時まで営業しております♪ 平日は静かな環境でじっくり作業に打ち込めます…ぜひ遊びにいらしてください🙇🙇🙇  製作スペース🈳有 塗装スペース🈳有 撮影ご依頼 📸🆗 # 模型製作スペース pic.x.com/5yLyvoONIm</div>
-      </a></div>
+    <div class='rt-timeline'><a class="rt-post" href="https://x.com/kogoeshobo/status/2084127534862717069?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>埼玉県の本屋・書店「小声書房」｜新刊注文＆買取｜１冊からでも大歓迎✨</span><span class='rt-post-time'>2026/08/03 13:01</span></div><div class='rt-post-body'>小声書房979日目オープンしたことを小さな声でお伝えします。気温が少し下がり、過ごしやすい一日になりそうな 北本市 です。これくらいの気候が続いて欲しいですね。本日は20時まで。皆様のご来店をお待ちしてます。 pic.x.com/YhKBoMuOzt</div></a><a class="rt-post" href="https://x.com/anthriumu2/status/2084091409905373355?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>アンスリウム2</span><span class='rt-post-time'>2026/08/03 10:38</span></div><div class='rt-post-body'>また埼玉か( *｀ω´)ペルー系か？  空き地で10代の女性の首を絞めて「死にたい？」などと脅迫　強姦未遂で川畑アレキサンダー（32）を逮捕送検　埼玉県 北本市 （動画あり） xsokuhou.net/archives/16482…</div></a><a class="rt-post" href="https://x.com/tsukuyomi_ki/status/2084088562195329441?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>月詠珈琲</span><span class='rt-post-time'>2026/08/03 10:26</span></div><div class='rt-post-body'>お盆休みのお知らせ🙇 月詠珈琲北本店、桶川店ともに8月11日-8月14日まで誠に勝手ながらお休みをいただきます。ご迷惑、ご不便をお掛けし大変申し訳ございません。何卒、ご容赦いただけますようよろしくお願い申し上げます。 # 北本市 # 喫茶店 # カフェ # 珈琲 # お盆 pic.x.com/GH3ANbwS5f</div></a><a class="rt-post" href="https://x.com/momoko563/status/2083943310973145561?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>六四天安門事件（1989年6月4日）</span><span class='rt-post-time'>2026/08/03 00:49</span></div><div class='rt-post-body'>🔴 2026.7.29 日テレNEWS @ntv_news 【32歳の男逮捕】｢死にたい？｣などと脅し…10代女性に性的暴行加えようとケガさせたか youtu.be/dZPABIkgNtU 埼玉県 北本市 川畑アレキサンダー(32)</div></a><a class="rt-post" href="https://x.com/momoko563/status/2083942571366322668?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>六四天安門事件（1989年6月4日）</span><span class='rt-post-time'>2026/08/03 00:46</span></div><div class='rt-post-body'>🔴 2026.7.29（日テレNEWS NNN） 「死にたい？」などと脅し…10代女性に性的暴行加えようとケガさせたか　32歳の男逮捕 news.ntv.co.jp/category/socie… 🟡埼玉県 北本市 で10代の女性を「死にたい？」と脅し、性的暴行を加えようとして全治1ヶ月のケガをさせた疑いで、川畑アレキ</div></a><a class="rt-post" href="https://x.com/maruyasuTOKYO/status/2084070573966287193?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>松井@日本一賞味期限切れを売るスーパー</span><span class='rt-post-time'>2026/08/03 09:15</span></div><div class='rt-post-body'>熊本地震被災地へお水180ケースなど寄付させていただきます。  埼玉県 桶川市 の建築会社様が手弁当で運んでくださります。  遠路よろしくおねがいします🙇 pic.x.com/RLqn3z3Sca</div></a><a class="rt-post" href="https://x.com/Tyra497419/status/2084046073115582782?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>せなこ</span><span class='rt-post-time'>2026/08/03 07:37</span></div><div class='rt-post-body'>お腹すいたー誰かご飯行こ 桶川市 か伊奈町らへん出没します✨  シーシャ 写真で伝えたい私の世界</div></a><a class="rt-post" href="https://x.com/oshirashu2026/status/2083535116115284138?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>TKO木本武宏トークライブ in 桶川【公式】10/3土 開催</span><span class='rt-post-time'>2026/08/01 21:47</span></div><div class='rt-post-body'>🌟勝手にコラボ🌟 # 木本さんと桶川 # TKO木本武宏トークライブin桶川 カードと一緒に巡って、イベントと # 桶川 を勝手にPR📢 # 桶川市 は地域振興を目的に日本クレーンゲーム協会と包括連携協定を結んでいます。 # 道の駅べに花の郷おけがわ にも面白いゲームがありました！ぜひ挑戦してみてね😆 pic.x.co</div></a><a class="rt-post" href="https://x.com/a_priworo496/status/2083478506550485251?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>ア・プリヲロ</span><span class='rt-post-time'>2026/08/01 18:02</span></div><div class='rt-post-body'># さすがにお前らが住んでる県の市町村15個答えれるよな さいたま市 熊谷市 川越市 上尾市 川口市 春日部市 朝霞市 越谷市 桶川市 蓮田市 鴻巣市 桜木町 ■■■ ■■■ ■■■☚住んでる周辺のため</div></a><a class="rt-post" href="https://x.com/nakanishik26/status/2084145861903417608?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>中西こうじろう</span><span class='rt-post-time'>2026/08/03 14:14</span></div><div class='rt-post-body'>今日のランチ 肉うどん あたらしや（ 鴻巣市 鎌塚1-2-5） # 鴻巣市 # うどん # ランチ pic.x.com/8dEV7sljMA</div></a><a class="rt-post" href="https://x.com/tomtoms214/status/2084121572303118788?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>SUM-Y</span><span class='rt-post-time'>2026/08/03 12:37</span></div><div class='rt-post-body'>返信先: @ HoneySpecialP 自分らで言っているじゃないか自業自得だよ。 個人的に花火大会でブルーインパルスが飛んでくるのを 鴻巣市 の共産党市議が止めたさせた件、忘れてないぞ。 pic.x.com/jtif391h6e</div></a><a class="rt-post" href="https://x.com/PLASTa_space/status/2084101443972477427?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>撮影スタジオ付の模型製作スペース・プラスタ PLASTa (埼玉県鴻巣市)</span><span class='rt-post-time'>2026/08/03 11:17</span></div><div class='rt-post-body'>8/3(月) 埼玉県 # 鴻巣市 のPLASTa 18時まで営業しております♪ 平日は静かな環境でじっくり作業に打ち込めます…ぜひ遊びにいらしてください🙇🙇🙇  製作スペース🈳有 塗装スペース🈳有 撮影ご依頼 📸🆗 # 模型製作スペース pic.x.com/5yLyvoONIm</div></a></div>
     <div class="x-link-grid">
       <a class="x-search-btn" href="https://twitter.com/search?q=%23%E5%8C%97%E6%9C%AC%E5%B8%82&src=typed_query&f=live" target="_blank" rel="noopener">
         🔗 #北本市 をXで検索
@@ -1351,11 +1330,193 @@
         🔗 #鴻巣市 をXで検索
       </a></div>
   </details>
+  </div>
+
+  <div id="top-panel-news" class="top-tab-panel">
+    
+    <section class="block">
+      <h2>📰 主要紙ニュース（重複排除・要約＋リンク）</h2>
+      
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#ef4444">朝日新聞（日経新聞・毎日新聞・読売新聞も同時報道）</span>
+        <span class="paper-time">08/03 15:02</span>
+      </div>
+      <div class="topic-title">熊本市で40.3度を記録、観測史上初の酷暑日に　危険な暑さ続く</div>
+      <div class='topic-summary'>熊本市で3日午後2時24分、40.3度を記録し、酷暑日となった。熊本県内で40度以上を記録するのは観測史上初めて。
+
+　熊本県内ではほかにも、午後2時までに菊池市で39.…</div>
+      <a class="topic-link" href="https://news.yahoo.co.jp/articles/2ed830b24fb8dc0b059c662706a936213424dc7c" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#3b82f6">日経新聞（毎日新聞も同時報道）</span>
+        <span class="paper-time">08/03 14:38</span>
+      </div>
+      <div class="topic-title">スーチー氏、赤十字ミャンマー代表と面会　軟禁移行後で初の公表</div>
+      <div class='topic-summary'>ミャンマー大統領府は3日、同国の民主化指導者アウンサンスーチー氏が赤十字国際委員会（ICRC）の現地代表と同日面会したと発表した。スーチー氏は2021年のクーデターで国軍…</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOGM0334H0T00C26A8000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#ef4444">朝日新聞（読売新聞も同時報道）</span>
+        <span class="paper-time">08/03 14:00</span>
+      </div>
+      <div class="topic-title">生成AIで児童画像の性的加工、上半期123件　前年の倍に、警察庁</div>
+      <div class='topic-summary'>生成AIなどを使って18歳未満の児童の画像を加工する「性的ディープフェイク」について、警察庁は3日、今年上半期（1～6月）に警察が取り扱った事案は123件あり、昨年同期か…</div>
+      <a class="topic-link" href="https://news.yahoo.co.jp/articles/51c5f88c2b6adf1dc6b85c881fa8484a12d9f022" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#3b82f6">日経新聞</span>
+        <span class="paper-time">08/03 15:05</span>
+      </div>
+      <div class="topic-title">三菱商事、株価が一時4%安　好決算も材料出尽くし</div>
+      <div class='topic-summary'>（14時30分、プライム、コード8058）三菱商が続落している。前週末比195円（4.08%）安の4581円まで下げた。3日14時に発表した2026年4〜6月期の連結決算…</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOUB0335A0T00C26A8000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#3b82f6">日経新聞</span>
+        <span class="paper-time">08/03 15:00</span>
+      </div>
+      <div class="topic-title">熊本地震、被災地へ7億円超のふるさと納税　官房長官「心から感謝」</div>
+      <div class='topic-summary'>木原稔官房長官は3日の記者会見で、熊本地震の被災地へのふるさと納税の寄付金が200超の地方自治体に7億円超集まったと明かした。大手ポータルサイト上で代理で受け付ける自治体</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOUA0327Y0T00C26A8000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#3b82f6">日経新聞</span>
+        <span class="paper-time">08/03 15:00</span>
+      </div>
+      <div class="topic-title">日本維新の会が内密出産PTの初会合、論点整理へ</div>
+      <div class='topic-summary'>日本維新の会は3日、「内密出産」に関するプロジェクトチーム（PT）の初会合を開いた。座長を務める金村龍那氏は「国会全体を巻き込んで法制化に向けて努力したい」と語った。秋の…</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOUA031OQ0T00C26A8000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#f59e0b">読売新聞</span>
+        <span class="paper-time">08/03 15:00</span>
+      </div>
+      <div class="topic-title">ひきこもり当事者が「研究員」に…自治体・企業に提言、仮想空間で参加しやすく</div>
+      <div class='topic-summary'>ひきこもりの人の活躍のあり方を考えるため、当事者が「研究員」として参加する研究所を、大阪公立大のチームが開設した。仮想空間「メタバース」を活用し、コミュニケーションが苦手…</div>
+      <a class="topic-link" href="https://news.yahoo.co.jp/articles/68afcbe8307fb0e9a49d0d72f2f5547e2286f05a" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    </section>
+    <section class="block">
+      <h2>🌍 海外情勢（BBC/CNN/ロイター等を報じる国内メディアの日本語記事・要約＋リンク）</h2>
+      <p class="disclaimer">海外メディア原文の機械翻訳・全文転載は著作権上行わず、それらを報じる国内メディアの実際の日本語記事＋元記事リンクのみを掲載しています。</p>
+      
+      <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">08/02 01:24</span></div>
+        <div class="topic-title">サッカー＝国際親善試合、ＦＣ東京がドルトムントに敗戦（ロイター）</div>
+        <a class="topic-link" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE9DU3UzcnBwZVBTYXhwSEg0QTdFNTRoejBLVG1PdVk1RVoxUkFiVXBqSDFPZXotTUl6dldmeDN3TTVtY2I2aGhOMGx0QWFLTVZUTGVlMzJEQXByeDJPXzlYYy02UU0yVHZSZUM4ZGhSQjAxNzFqejk1dUFTREZ3dUU?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>
+      <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">07/31 01:00</span></div>
+        <div class="topic-title">ブルームバーグ、大阪府・大阪市が推進する「国際金融都市構想」の進展に敬意を表し大阪の持続可能な発展を支援</div>
+        <a class="topic-link" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE51UEZrQW5QMko0cXFtam4weUNDZkZkQ09mcktNT255NDRSRnNNV1NQX0RudUtya1NoMXhNeGNTQmppWVJfT0w3U1lwZklsczl1TEFmOGJ4ejRKdTJua3lqQmk0T0QwN1NwX3c?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>
+      <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">07/31 01:20</span></div>
+        <div class="topic-title">米国務省が作成のアフリカ地図、6カ国の位置全部間違えた</div>
+        <a class="topic-link" href="https://news.google.com/rss/articles/CBMiUEFVX3lxTE5VdGZiTlBrbU81NDVHU2tJOEtPY2gtLVZ3UXU5eDlsUkNPS2U5OGJrM1FjeGpTOTJaUHAwY0gwNXJ0blRDR2ZTdk96RzJJaUZ6?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>
+      <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">07/25 07:00</span></div>
+        <div class="topic-title">国際刑事裁判所、主任検察官を解任　性的不正行為の疑惑で</div>
+        <a class="topic-link" href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE1jUF9lSms0bDFWNjlQc1N5N0tVdEQ0dkVzQ2xFelNPbkFNbmQ2ZTVvT0dUSDJXVTlOSld3d0NKRzIzdW1BdGN4OFN6TGsxbkFwR3AxRVg5Szd1UmVFYktB0gFkQVVfeXFMTzh6c2F4OXpzdXhYRWJqZWRTZnplazFuck53YW5yWmE2aEFybWZSMnFhX1VVaHNjMGlkNlVTNVBRYkRkMjRuMmtMX3MxLTNhYmZwQUhQVm1YYWRWdG1adDl6TGhZaQ?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>
+      <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">07/16 07:00</span></div>
+        <div class="topic-title">米国際貿易委、メモリーチップ巡る特許侵害の疑いでサムスン調査</div>
+        <a class="topic-link" href="https://news.google.com/rss/articles/CBMieEFVX3lxTFBKejNfU190S2dITUJNRTFUbG5zdFdiN3FjRWJGU25EZFlLblN6WUR1VVpxOXNub3FqamhfM1p1VDFJeHpwMXoyeW1ZalNQRkpaS2tRX3JVclhYVjVBRXZoRHBZd1JCMmR1YU01NlQwUVBiOUQ1cHFNMQ?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>
+    </section>
+  </div>
+
+  <div id="top-panel-market" class="top-tab-panel">
+    
+  <details class="block accordion" open>
+    <summary>📈 株・市場速報</summary>
+    <div class="mk-grid">
+      <div class="mk-card">
+        <div class="mk-label">日経平均株価</div>
+        <div class="mk-value">63709.31</div>
+        <div class="mk-change mk-down">-652.71（-1.01%）</div>
+      </div>
+      <div class="mk-card">
+        <div class="mk-label">S&amp;P 500</div>
+        <div class="mk-value">7489.72</div>
+        <div class="mk-change mk-up">+52.09（+0.7%）</div>
+      </div>
+      <div class="mk-card">
+        <div class="mk-label">ドル/円</div>
+        <div class="mk-value">156.73</div>
+        <div class="mk-change mk-down">-3.45（-2.15%）</div>
+      </div>
+      <div class="mk-card">
+        <div class="mk-label">VIX指数</div>
+        <div class="mk-value">15.99</div>
+        <div class="mk-change mk-down">-1.1（-6.44%）</div>
+      </div></div>
+  </details>
+  </div>
+
+  <div id="top-panel-watchlist" class="top-tab-panel">
+    
+  <details class="block accordion" open>
+    <summary>⭐ My銘柄スカウター</summary>
+    <p class="disclaimer">代表登録の7銘柄の実際の株価（yfinance）と関連ニュースです。コード追加欄は「追跡希望リスト」として保存されますが、追加銘柄のリアルタイム株価はブラウザ側では取得できないため（CORS制限、実機検証済み）次回のサーバー側更新には反映されません。</p>
+      <div id="stock-grid" class="stock-grid">
+      <div class="stock-card" data-code="7532">
+        <div class="stock-head"><span class="stock-code">7532</span><span class="stock-name">パン・パシフィック・インターナショナルホールディングス</span></div>
+        <div class="stock-price"><span class='mk-value'>897.5円</span><span class='mk-change mk-down'>-4.7（-0.52%）</span></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMifkFVX3lxTE9FSE1MQm1La3ZXcS1PbFptbV9qenppU2J0VW9yN3R3bzRJOXZnU0dudk5HRGtPQjZQQ2N4Y0tadDlsaXhGRS1fR1lvZE55cDZYdXU2T1Uzd3RVNVNEVUwybUowUlZOcXdnZUNJVWs3c1RtZWI5WUlXcTVGNDBaUQ?oc=5" target="_blank" rel="noopener">📰 パンパシHD株が軟調 インフレ下でも「驚安」戦略に慎重な見方</a><a class="info-link" href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE01dllOczNoR0FjRG9lcEhsRUk3dFI5SDZnMVlhLVdZMnRtQUlXdFJJanBYX05pZERPLUgtZ1hybGhxUm1zNEVBZnF4b01aTDd6M2p5NXZlR3E2cU5MX0E0?oc=5" target="_blank" rel="noopener">📰 (株)パン・パシフィック・インターナショナルホールディングス【7532】：今の株価の理由は？値動きの背景をAIが解説</a></div>
+      </div>
+      <div class="stock-card" data-code="2502">
+        <div class="stock-head"><span class="stock-code">2502</span><span class="stock-name">アサヒグループホールディングス</span></div>
+        <div class="stock-price"><span class='mk-value'>1650.5円</span><span class='mk-change mk-down'>-16.0（-0.96%）</span></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE9TRnJSbTlGS2tLcnF1cV9WRjJTeGlmZFVMcTJ3REdCS2RCbWNPcHRnOXFvbEZtM0lDaUVPZHVubm1OaFQ3N3YtV2NTVG9uT3JNVHA2VU5IRG9UekV4MHNJ?oc=5" target="_blank" rel="noopener">📰 アサヒグループホールディングス(株)【2502】：今の株価の理由は？値動きの背景をAIが解説</a><a class="info-link" href="https://news.google.com/rss/articles/CBMiX0FVX3lxTFBsRndDbno4Mkc2X3BMb01Cd2VVbDg2Y3BEUnU5VXhBNHFGVEVUdFpCSlVVaXBCaHo4aEp5N1BXUE5OdVlqeEdfMml6VThneUVqeWRxaHFFSHJuMzgxdWk0?oc=5" target="_blank" rel="noopener">📰 なぜアサヒはサイバー被害から｢最高益｣を狙えるのか…強気シナリオの裏にある株主還元の代償と迫る宿敵キリンの足音</a></div>
+      </div>
+      <div class="stock-card" data-code="1540">
+        <div class="stock-head"><span class="stock-code">1540</span><span class="stock-name">純金上場信託（金ETF）</span></div>
+        <div class="stock-price"><span class='mk-value'>19180.0円</span><span class='mk-change mk-down'>-540.0（-2.74%）</span></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMiUkFVX3lxTFBEUWVfc3drZjdhRGZNYVVwRllyZkZ2ZnpTQjloUGpkNDJGYWJSaWtPMEFDMTdJNXpiS1dZUnN5T0c5bkFHUHNpVVhMV1c3enNfRkE?oc=5" target="_blank" rel="noopener">📰 純銀上場信託(現物国内保管型)【1542】：株価・株式情報（夜間PTS含む）</a><a class="info-link" href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE96VHJfeEQxc1RpclN1b2stV2s2ZXpuZC1sREd4R3FxdE1za1UwYnhUTnN0eW5WMUJKOTRoenR1amk5NW5NOFdQQ0dBX2o0UmpzWnI4Q3hYWjhHUQ?oc=5" target="_blank" rel="noopener">📰 東証が注意喚起：金（ゴールド）ETFの市場価格と基準価額の乖離とは？</a></div>
+      </div>
+      <div class="stock-card" data-code="8001">
+        <div class="stock-head"><span class="stock-code">8001</span><span class="stock-name">伊藤忠商事</span></div>
+        <div class="stock-price"><span class='mk-value'>1986.0円</span><span class='mk-change mk-down'>-28.0（-1.39%）</span></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMizAFBVV95cUxPdy1qa3IwTGpfaHJlNmNXU1FxQWVaTkNDdWUwa2VjLS1UNG9ZcVNhZUFXZ3I1ODdETkswRGdEVGZVOFB2VGRuYmNKWlNLTW9wR3llaGJsZGVma3JVX293UFdGOHA4dk9jbG96QjlrU0R3S25oclVTMU5IdEExLTdtcUpPQ3pTVlM4ZzE4WUdKd3psbEYyajBNa3dGdzdBY2l0cG1TOUlMb3ViVWpLVTlscGc5eDRfdGQyM1ZibmNfcjduS2g4OU1RaEkxOEU?oc=5" target="_blank" rel="noopener">📰 伊藤忠商事[8001]：2027年3月期 第1四半期決算短信〔IFRS〕（連結） 2026年8月3日(適時開示) ：日経会社情報DIGITAL</a><a class="info-link" href="https://news.google.com/rss/articles/CBMiYkFVX3lxTE1qMHUwZG9ZVTJMWVROMUphMm56allxMkRWcjlRYldjY2ltd3dSQ00xRlNqREhkWEMwdE55eGUxZjhlamVDdF9KZnR0MXZDU0VzcW83ZzQtcWlta0gyZVIwRjZR?oc=5" target="_blank" rel="noopener">📰 伊藤忠、4-6月期(1Q)最終は3％増益で着地</a></div>
+      </div>
+      <div class="stock-card" data-code="6472">
+        <div class="stock-head"><span class="stock-code">6472</span><span class="stock-name">NTN</span></div>
+        <div class="stock-price"><span class='mk-value'>388.3円</span><span class='mk-change mk-down'>-2.7（-0.69%）</span></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMiUkFVX3lxTE1pWjgyTTRBR2lVT09UOEF6UFFVTGhBSHA0ekFMTWZwZld6NWZlVHdid1RscjR1cHBydlp2SHpUOWVmSzhvTndzeWgzYnZsZXBULXc?oc=5" target="_blank" rel="noopener">📰 〈トップインタビュー2026〉NTN、鵜飼英一社長 軸受けの小型化・軽量化を可能に グローバルでの事業再編も</a><a class="info-link" href="https://news.google.com/rss/articles/CBMifEFVX3lxTE96WkJPOVd4NHNGb3JMdm1Najlpa3VxYUJIQ19JN2hkb3ZXYkNQX3pfekc3YnhYV2YteXhvUlh6NnY4cVlSNGxIM3dxanZlbHlJd3Y5SlhCRmRMMktDbWNJT1plcW1ycFQ3R2xHeFFONU0tR0ZZVGxxQWlGUE4?oc=5" target="_blank" rel="noopener">📰 オフグリッド電源で離島の防災強化 NTNと竹富町、水道不要のトイレにも - kankyo</a></div>
+      </div>
+      <div class="stock-card" data-code="1832">
+        <div class="stock-head"><span class="stock-code">1832</span><span class="stock-name">北陸電気工事</span></div>
+        <div class="stock-price"><span class='mk-value'>取得エラー（コード要確認）</span></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE8wTFdLb1ZxTHd2R0hyd0hfVWJxWXlmaUVPcURSbzNCTldtbFFlY3RvUl94bV8wVDc3Wk80bTVBZFNLMzM0RXlOQVFaZnZZb1VBck9qdXl3QXotRlliU0hwYw?oc=5" target="_blank" rel="noopener">📰 北陸電気工事(株)【1930】：決算情報</a><a class="info-link" href="https://news.google.com/rss/articles/CBMiUkFVX3lxTE5HbXpZLUJqSUh3UTNxMEMxV3RTOTNQWFFhLWlRMHNNazFGNU82ZTJXU25oMFEwRjdidXhHdmNiSW9ac1ZCREJFZ3FPZnFTRXJUWUE?oc=5" target="_blank" rel="noopener">📰 北陸電工、4-6月期(1Q)経常は86％増益で着地</a></div>
+      </div>
+      <div class="stock-card" data-code="5532">
+        <div class="stock-head"><span class="stock-code">5532</span><span class="stock-name">REALITY Studios</span></div>
+        <div class="stock-price"><span class='mk-value'>3230.0円</span><span class='mk-change mk-down'>-70.0（-2.12%）</span></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMiakFVX3lxTE1TSEFBQW5NR1Rfdkx6bVJFVHRrNHlmaU5VSHY2VjhqaWpkMWZHcFlEVlhfMmtxaXhDa21Yb2V6eld6d2hZR09zQmh2VkxYUmlVcWd5aGczZndfUkZ5Tlp4SkRhMlpGWVVyYXc?oc=5" target="_blank" rel="noopener">📰 REALITY Studios、メンズアイドル大手RINDO Entertainmentと資本業務提携</a><a class="info-link" href="https://news.google.com/rss/articles/CBMif0FVX3lxTFBmMTZ3WUJ6bjk4dHZoNEQ3MUp2bXlDSmhVSU5Nc2REeXBZQ0FrUG16TC1ERzA0b3J3R1R1T0NvZzlRcGZUT1VnbnJHUTI3eHItYXQzd2t4eWt2RVlrRkgtS1dVTkJLbXJ5N1JaN2Y4R25LaUR6eUxacHNWVHBzdjA?oc=5" target="_blank" rel="noopener">📰 違法裁量労働巡り是正勧告 過労死ライン超え残業も（共同通信）</a></div>
+      </div></div>
+      <div class="stock-add-form">
+        <input type="text" id="stock-add-input" placeholder="証券コードを追加（例: 9984）" maxlength="6">
+        <button id="stock-add-btn" type="button">追跡希望リストに追加</button>
+      </div>
+      <div id="stock-watch-extra" class="stock-watch-extra"></div>
+  </details>
+  </div>
+
 
   <details class="block accordion">
     <summary>⚙️ システム状態・自動更新について</summary>
     <ul class="system-status-list">
-      <li>このページの生成時刻（JST）: 2026-08-03 14:26 JST</li>
+      <li>このページの生成時刻（JST）: 2026-08-03 15:42 JST</li>
       <li>自動更新間隔: 15分おき（GitHub Actions cron: 3,18,33,48 * * * *）</li>
       <li>実行環境: GitHub Actions（Macの電源・スリープに依存しない）</li>
       <li>実行履歴の確認: <a href="https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions" target="_blank" rel="noopener">https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions</a></li>
@@ -1365,7 +1526,7 @@
 
   <footer>
     データ取得状況（スキップログ）:
-    <ul><li>気象庁 地震情報: 直近72時間以内に埼玉県を含む地震情報なし（気象庁XMLフィードは正常に取得できています）</li></ul>
+    <ul><li>気象庁 地震情報: 直近72時間以内に埼玉県を含む地震情報なし（気象庁XMLフィードは正常に取得できています）</li><li>1832 北陸電気工事: yfinanceからデータを取得できませんでした（銘柄コード要確認）</li></ul>
     <p>※ 消防出動情報はライブ配信元がJavaScript動的読み込みのため、静的スクレイピングでは取得できず、消防本部の公式お知らせを代替表示しています。</p>
     <p>※ 北本市・桶川市・鴻巣市の公式サイトはJSタブ構造のため新着情報を直接取得できず、Google Newsの検索結果（直近21日以内のみ）で代替しています。NHK埼玉のRSS配信は廃止済みのため対象外です。</p>
     <p>※ 防犯・防災アラート／地域トピックは、同一ニュースの重複掲載を除去したうえで、直近7日以内に日付が確認できたもののみを表示しています（日付が確認できない情報は「最新のみ」の要件を満たせないため対象外にしています）。</p>
@@ -1399,6 +1560,64 @@
 
   const initialBtn = document.querySelector(".tab-btn.active");
   if (initialBtn) applyTabFilter(initialBtn.dataset.target);
+
+  // --- 上部タブ（地域ポータル／主要紙・海外ニュース／株・市場速報／My銘柄スカウター） ---
+  const topButtons = document.querySelectorAll(".toptab-btn");
+  const topPanels = document.querySelectorAll(".top-tab-panel");
+  topButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      topButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const target = btn.dataset.toptarget;
+      topPanels.forEach(p => {
+        p.classList.toggle("active", p.id === "top-panel-" + target);
+      });
+    });
+  });
+
+  // --- My銘柄スカウター：追跡希望リスト（localStorage、実データではなくコード登録のみ） ---
+  const STOCK_WATCH_KEY = "rikkyKogyoStockWatchlist";
+  function loadWatchList() {
+    try { return JSON.parse(localStorage.getItem(STOCK_WATCH_KEY) || "[]"); } catch (e) { return []; }
+  }
+  function saveWatchList(list) {
+    localStorage.setItem(STOCK_WATCH_KEY, JSON.stringify(list));
+  }
+  function renderWatchExtra() {
+    const box = document.getElementById("stock-watch-extra");
+    if (!box) return;
+    const list = loadWatchList();
+    box.innerHTML = "";
+    list.forEach(code => {
+      const row = document.createElement("div");
+      row.className = "stock-watch-extra-item";
+      row.innerHTML = "<span>コード " + code + "（追跡希望登録済み・データ未取得）</span>";
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", () => {
+        saveWatchList(loadWatchList().filter(c => c !== code));
+        renderWatchExtra();
+      });
+      row.appendChild(delBtn);
+      box.appendChild(row);
+    });
+  }
+  const addBtn = document.getElementById("stock-add-btn");
+  const addInput = document.getElementById("stock-add-input");
+  if (addBtn && addInput) {
+    addBtn.addEventListener("click", () => {
+      const code = addInput.value.trim();
+      if (!/^[0-9A-Za-z]{2,6}$/.test(code)) return;
+      const list = loadWatchList();
+      if (!list.includes(code)) {
+        list.push(code);
+        saveWatchList(list);
+        renderWatchExtra();
+      }
+      addInput.value = "";
+    });
+  }
+  renderWatchExtra();
 </script>
 </body>
 </html>

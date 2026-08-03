@@ -8,6 +8,7 @@ import urllib.parse
 import feedparser
 import requests
 import pdfplumber
+import yfinance as yf
 from bs4 import BeautifulSoup
 
 # ============================================================
@@ -453,9 +454,15 @@ def fetch_yahoo_realtime_search(city):
                 continue
             author_el = t.select_one('[class*="Tweet_authorName__"]')
             author = author_el.get_text(strip=True) if author_el else "投稿者不明"
+            # Tweet_time__要素内の<a href>が実際の個別ポストへの直リンク
+            # （x.com/{screen_name}/status/{id}）になっているため、それを
+            # そのまま使う。取得できない場合は曖昧な検索一覧へは飛ばさず
+            # link=Noneとし、カード選択（コピー）のみの扱いにする。
+            permalink_a = time_el.select_one("a[href]") if time_el else None
+            permalink = permalink_a.get("href") if permalink_a else None
             entry = {
                 "city": city, "author": author, "body": body[:160],
-                "time_text": time_text, "link": url,
+                "time_abs": dt.strftime("%Y/%m/%d %H:%M"), "link": permalink,
             }
             if any(k in body for k in YAHOO_RT_KEYWORDS):
                 seen.add(dedup_key)
@@ -499,11 +506,16 @@ def render_x_widget_section(x_posts):
       </a>""" for tag in X_HASHTAGS.values())
 
     if x_posts:
-        post_cards = "".join(f"""
-      <a class="rt-post" href="{esc_x(p['link'])}" target="_blank" rel="noopener">
-        <div class="rt-post-head"><span class="rt-post-city">{esc_x(p['city'])}</span><span class="rt-post-author">{esc_x(p['author'])}</span><span class="rt-post-time">{esc_x(p['time_text'])}</span></div>
-        <div class="rt-post-body">{esc_x(p['body'])}</div>
-      </a>""" for p in x_posts)
+        post_cards = ""
+        for p in x_posts:
+            head_body = (f"<div class='rt-post-head'><span class='rt-post-city'>{esc_x(p['city'])}</span>"
+                         f"<span class='rt-post-author'>{esc_x(p['author'])}</span>"
+                         f"<span class='rt-post-time'>{esc_x(p['time_abs'])}</span></div>"
+                         f"<div class='rt-post-body'>{esc_x(p['body'])}</div>")
+            if p.get("link"):
+                post_cards += f'<a class="rt-post" href="{esc_x(p["link"])}" target="_blank" rel="noopener">{head_body}</a>'
+            else:
+                post_cards += f'<div class="rt-post rt-post-nolink" title="個別ポストへの直リンクを取得できなかったため未リンクです">{head_body}</div>'
         timeline_html = f"<div class='rt-timeline'>{post_cards}</div>"
     else:
         timeline_html = "<p class='empty'>直近{}日以内・関連キーワード一致の投稿はありません（ノイズ除外フィルタが正常に機能している状態です）。</p>".format(YAHOO_RT_RECENT_DAYS)
@@ -1120,6 +1132,178 @@ def render_shopping_section():
   </details>"""
 
 
+# ------------------------------------------------------------
+# 株・市場速報 / My銘柄スカウター（yfinance実データのみ・捏造なし）
+# ------------------------------------------------------------
+MARKET_INDEX_TICKERS = [
+    ("日経平均株価", "^N225"), ("S&P 500", "^GSPC"), ("ドル/円", "JPY=X"), ("VIX指数", "^VIX"),
+]
+
+# 代表よりご提供いただいた実際のウォッチ銘柄7件（証券コードは代表提供の実データ）
+WATCHLIST_STOCKS = [
+    ("7532", "パン・パシフィック・インターナショナルホールディングス"),
+    ("2502", "アサヒグループホールディングス"),
+    ("1540", "純金上場信託（金ETF）"),
+    ("8001", "伊藤忠商事"),
+    ("6472", "NTN"),
+    ("1832", "北陸電気工事"),
+    ("5532", "REALITY Studios"),
+]
+
+
+def fetch_yf_quote(label, ticker):
+    """yfinance経由の実際の株価・指数データのみを使用する。取得できない
+    銘柄（上場廃止・コード誤り等）は憶測の価格を作らず、エラーを明示する。"""
+    try:
+        hist = yf.Ticker(ticker).history(period="5d")
+        if hist.empty:
+            log_skip(label, "yfinanceからデータを取得できませんでした（銘柄コード要確認）")
+            return {"label": label, "ticker": ticker, "status": "error"}
+        last = float(hist["Close"].iloc[-1])
+        prev = float(hist["Close"].iloc[-2]) if len(hist) > 1 else None
+        change = (last - prev) if prev is not None else None
+        change_pct = (change / prev * 100) if (change is not None and prev) else None
+        return {
+            "label": label, "ticker": ticker, "status": "ok",
+            "value": round(last, 2),
+            "change": round(change, 2) if change is not None else None,
+            "change_pct": round(change_pct, 2) if change_pct is not None else None,
+        }
+    except Exception as e:
+        log_skip(label, f"取得エラー ({e})")
+        return {"label": label, "ticker": ticker, "status": "error"}
+
+
+def render_market_section():
+    quotes = [fetch_yf_quote(label, ticker) for label, ticker in MARKET_INDEX_TICKERS]
+    cards = "".join(f"""
+      <div class="mk-card">
+        <div class="mk-label">{esc_x(q['label'])}</div>
+        <div class="mk-value">{q['value']}</div>
+        <div class="mk-change {'mk-up' if (q.get('change') or 0) >= 0 else 'mk-down'}">{'+' if (q.get('change') or 0) >= 0 else ''}{q.get('change')}（{'+' if (q.get('change_pct') or 0) >= 0 else ''}{q.get('change_pct')}%）</div>
+      </div>""" if q["status"] == "ok" else f"""
+      <div class="mk-card mk-error">
+        <div class="mk-label">{esc_x(q['label'])}</div>
+        <div class="mk-value">取得エラー</div>
+      </div>""" for q in quotes)
+    return f"""
+  <details class="block accordion" open>
+    <summary>📈 株・市場速報</summary>
+    <div class="mk-grid">{cards}</div>
+  </details>"""
+
+
+def fetch_stock_news(name, limit=2):
+    """Google News RSSから、銘柄名に関する実際の報道タイトルを取得する。"""
+    items = []
+    url = "https://news.google.com/rss/search?q=" + urllib.parse.quote(name) + "&hl=ja&gl=JP&ceid=JP:ja"
+    try:
+        feed = feedparser.parse(url, request_headers=HEADERS)
+        for e in feed.entries[:limit]:
+            title = re.sub(r'\s*-\s*[^-]+$', '', e.get("title", "")).strip()
+            if title:
+                items.append({"title": title, "link": e.get("link", "")})
+    except Exception as ex:
+        log_skip(f"銘柄ニュース［{name}］", f"取得エラー ({ex})")
+    return items
+
+
+def render_stock_scouter_section():
+    cards = []
+    for code, name in WATCHLIST_STOCKS:
+        q = fetch_yf_quote(f"{code} {name}", f"{code}.T")
+        news = fetch_stock_news(name)
+        if q["status"] == "ok":
+            price_html = (f"<span class='mk-value'>{q['value']}円</span>"
+                          f"<span class='mk-change {'mk-up' if (q.get('change') or 0) >= 0 else 'mk-down'}'>"
+                          f"{'+' if (q.get('change') or 0) >= 0 else ''}{q.get('change')}（{'+' if (q.get('change_pct') or 0) >= 0 else ''}{q.get('change_pct')}%）</span>")
+        else:
+            price_html = "<span class='mk-value'>取得エラー（コード要確認）</span>"
+        news_html = "".join(f'<a class="info-link" href="{esc_x(n["link"])}" target="_blank" rel="noopener">📰 {esc_x(n["title"])}</a>' for n in news) \
+            if news else "<p class='empty'>直近の関連ニュースはありません。</p>"
+        cards.append(f"""
+      <div class="stock-card" data-code="{esc_x(code)}">
+        <div class="stock-head"><span class="stock-code">{esc_x(code)}</span><span class="stock-name">{esc_x(name)}</span></div>
+        <div class="stock-price">{price_html}</div>
+        <div class="info-link-grid">{news_html}</div>
+      </div>""")
+    return f"""
+  <details class="block accordion" open>
+    <summary>⭐ My銘柄スカウター</summary>
+    <p class="disclaimer">代表登録の7銘柄の実際の株価（yfinance）と関連ニュースです。コード追加欄は「追跡希望リスト」として保存されますが、追加銘柄のリアルタイム株価はブラウザ側では取得できないため（CORS制限、実機検証済み）次回のサーバー側更新には反映されません。</p>
+      <div id="stock-grid" class="stock-grid">{"".join(cards)}</div>
+      <div class="stock-add-form">
+        <input type="text" id="stock-add-input" placeholder="証券コードを追加（例: 9984）" maxlength="6">
+        <button id="stock-add-btn" type="button">追跡希望リストに追加</button>
+      </div>
+      <div id="stock-watch-extra" class="stock-watch-extra"></div>
+  </details>"""
+
+
+# ------------------------------------------------------------
+# 主要紙・海外ニュース タブ
+# ------------------------------------------------------------
+def fetch_world_news_jp(limit=5):
+    """海外主要メディア（BBC/CNN/ロイター/AP/ブルームバーグ）の英語原文を
+    機械翻訳して全文転載することはしない（著作権・訳文品質の両面でリスク）。
+    代わりに、それらを引用・言及している国内メディアの実際の日本語報道を
+    Google News RSSから取得する（既にプロが日本語で書いた実記事＋原文リンク）。"""
+    items = []
+    query = '(BBC OR CNN OR ロイター OR "AP通信" OR ブルームバーグ OR CNBC) 国際'
+    url = "https://news.google.com/rss/search?q=" + urllib.parse.quote(query) + "&hl=ja&gl=JP&ceid=JP:ja"
+    try:
+        feed = feedparser.parse(url, request_headers=HEADERS)
+        for e in feed.entries:
+            title = re.sub(r'\s*-\s*[^-]+$', '', e.get("title", "")).strip()
+            if not title:
+                continue
+            time_text = ""
+            if e.get("published_parsed"):
+                time_text = datetime.datetime(*e.published_parsed[:6]).strftime("%m/%d %H:%M")
+            items.append({"title": title, "link": e.get("link", ""), "time": time_text})
+            if len(items) >= limit:
+                break
+    except Exception as ex:
+        log_skip("海外ニュース（国内報道）", f"取得エラー ({ex})")
+    if not items:
+        log_skip("海外ニュース（国内報道）", "該当記事なし")
+    return items
+
+
+def render_news_tab_section():
+    try:
+        import newspaper_portal as npm
+        _, topics = npm.build_dataset()
+        jp_cards = "".join(npm.render_topic_card(t) for t in topics) if topics else ""
+    except Exception as e:
+        log_skip("主要紙ニュース統合", f"取得エラー ({e})")
+        jp_cards = ""
+    if not jp_cards:
+        jp_cards = "<p class='empty'>主要紙トピックを取得できませんでした。</p>"
+
+    world = fetch_world_news_jp()
+    if world:
+        world_cards = "".join(f"""
+      <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">{esc_x(w['time'])}</span></div>
+        <div class="topic-title">{esc_x(w['title'])}</div>
+        <a class="topic-link" href="{esc_x(w['link'])}" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>""" for w in world)
+    else:
+        world_cards = "<p class='empty'>該当する海外ニュースはありません。</p>"
+
+    return f"""
+    <section class="block">
+      <h2>📰 主要紙ニュース（重複排除・要約＋リンク）</h2>
+      {jp_cards}
+    </section>
+    <section class="block">
+      <h2>🌍 海外情勢（BBC/CNN/ロイター等を報じる国内メディアの日本語記事・要約＋リンク）</h2>
+      <p class="disclaimer">海外メディア原文の機械翻訳・全文転載は著作権上行わず、それらを報じる国内メディアの実際の日本語記事＋元記事リンクのみを掲載しています。</p>
+      {world_cards}
+    </section>"""
+
+
 KITAMOTO_DANCHI_GOMI_NOTE = "北本団地コース収集ルール（代表提供の実データ、2026-08-03修正確認）"
 
 
@@ -1637,6 +1821,9 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     events_html = render_events_section(topics)
     x_widget_html = render_x_widget_section(x_posts)
     system_status_html = render_system_status_section(now_str)
+    market_html = render_market_section()
+    stock_scouter_html = render_stock_scouter_section()
+    news_tab_html = render_news_tab_section()
 
     skip_html = "".join(f"<li>{s}</li>" for s in skip_log) if skip_log else "<li>なし（すべての情報源から正常に取得できました）</li>"
 
@@ -1672,6 +1859,34 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   header.top .meta {{ color: var(--ink-soft); font-size: 12.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }}
   .refresh-btn {{ display: inline-flex; align-items: center; min-height: 32px; background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 5px 12px; font-size: 11.5px; font-weight: 700; text-decoration: none; }}
   .refresh-btn:hover {{ background: var(--accent); color: #0c1116; }}
+
+  .toptabs {{ display: flex; gap: 6px; margin: 0 0 18px; flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 10; border-bottom: 1px solid var(--rule); }}
+  .toptab-btn {{ flex: 1; min-width: 90px; min-height: 44px; background: var(--bg-raised); color: var(--ink-soft); border: 1px solid var(--rule); border-radius: 8px; font-size: 12.5px; font-weight: 700; padding: 8px 6px; }}
+  .toptab-btn.active {{ background: var(--accent); color: #0c1116; border-color: var(--accent); }}
+  .top-tab-panel {{ display: none; }}
+  .top-tab-panel.active {{ display: block; }}
+
+  .mk-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }}
+  .mk-card {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; }}
+  .mk-error {{ opacity: 0.7; }}
+  .mk-label {{ font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }}
+  .mk-value {{ font-size: 17px; font-weight: 700; }}
+  .mk-change {{ font-size: 11.5px; margin-top: 2px; }}
+  .mk-up {{ color: #4ade80; }}
+  .mk-down {{ color: #f87171; }}
+
+  .stock-grid {{ display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }}
+  .stock-card {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }}
+  .stock-head {{ display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }}
+  .stock-code {{ background: var(--bg); border-radius: 4px; padding: 1px 6px; font-size: 11px; color: var(--accent); font-weight: 700; }}
+  .stock-name {{ font-weight: 700; font-size: 13.5px; }}
+  .stock-price {{ margin-bottom: 8px; display: flex; gap: 10px; align-items: baseline; }}
+  .stock-add-form {{ display: flex; gap: 8px; }}
+  .stock-add-form input {{ flex: 1; min-height: 44px; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; color: var(--ink); padding: 0 12px; font-size: 13px; }}
+  .stock-add-form button {{ min-height: 44px; background: var(--accent); color: #0c1116; border: none; border-radius: 8px; padding: 0 14px; font-weight: 700; font-size: 12.5px; }}
+  .stock-watch-extra {{ margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }}
+  .stock-watch-extra-item {{ display: flex; justify-content: space-between; align-items: center; background: #14171c; border: 1px dashed var(--rule); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--ink-soft); }}
+  .stock-watch-extra-item button {{ background: none; border: none; color: #f87171; font-size: 12px; }}
 
   .tabs {{ display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }}
   .tab-btn {{
@@ -1859,6 +2074,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .lifeline-ok {{ font-size: 13px; color: var(--store); }}
   .rt-timeline {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}
   .rt-post {{ display: block; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; text-decoration: none; color: var(--ink); }}
+  .rt-post-nolink {{ cursor: text; user-select: text; opacity: 0.85; }}
   .rt-post:hover {{ border-color: var(--accent); }}
   .rt-post-head {{ display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }}
   .rt-post-city {{ background: rgba(90,169,230,0.18); color: var(--accent); border-radius: 4px; padding: 1px 6px; font-weight: 700; }}
@@ -1887,6 +2103,14 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     </div>
   </header>
 
+  <div class="toptabs">
+    <button class="toptab-btn active" data-toptarget="local">地域ポータル</button>
+    <button class="toptab-btn" data-toptarget="news">主要紙・海外ニュース</button>
+    <button class="toptab-btn" data-toptarget="market">株・市場速報</button>
+    <button class="toptab-btn" data-toptarget="watchlist">My銘柄スカウター</button>
+  </div>
+
+  <div id="top-panel-local" class="top-tab-panel active">
   <section class="block">
     <h2>① 鉄道運行情報（JR高崎線・宇都宮線・湘南新宿ライン・上野東京ライン）</h2>
     {render_train_section(train_status)}
@@ -1924,6 +2148,20 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
 {medical_gomi_html}
 {events_html}
 {x_widget_html}
+  </div>
+
+  <div id="top-panel-news" class="top-tab-panel">
+    {news_tab_html}
+  </div>
+
+  <div id="top-panel-market" class="top-tab-panel">
+    {market_html}
+  </div>
+
+  <div id="top-panel-watchlist" class="top-tab-panel">
+    {stock_scouter_html}
+  </div>
+
 {system_status_html}
 
   <footer>
@@ -1962,6 +2200,64 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
 
   const initialBtn = document.querySelector(".tab-btn.active");
   if (initialBtn) applyTabFilter(initialBtn.dataset.target);
+
+  // --- 上部タブ（地域ポータル／主要紙・海外ニュース／株・市場速報／My銘柄スカウター） ---
+  const topButtons = document.querySelectorAll(".toptab-btn");
+  const topPanels = document.querySelectorAll(".top-tab-panel");
+  topButtons.forEach(btn => {{
+    btn.addEventListener("click", () => {{
+      topButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const target = btn.dataset.toptarget;
+      topPanels.forEach(p => {{
+        p.classList.toggle("active", p.id === "top-panel-" + target);
+      }});
+    }});
+  }});
+
+  // --- My銘柄スカウター：追跡希望リスト（localStorage、実データではなくコード登録のみ） ---
+  const STOCK_WATCH_KEY = "rikkyKogyoStockWatchlist";
+  function loadWatchList() {{
+    try {{ return JSON.parse(localStorage.getItem(STOCK_WATCH_KEY) || "[]"); }} catch (e) {{ return []; }}
+  }}
+  function saveWatchList(list) {{
+    localStorage.setItem(STOCK_WATCH_KEY, JSON.stringify(list));
+  }}
+  function renderWatchExtra() {{
+    const box = document.getElementById("stock-watch-extra");
+    if (!box) return;
+    const list = loadWatchList();
+    box.innerHTML = "";
+    list.forEach(code => {{
+      const row = document.createElement("div");
+      row.className = "stock-watch-extra-item";
+      row.innerHTML = "<span>コード " + code + "（追跡希望登録済み・データ未取得）</span>";
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", () => {{
+        saveWatchList(loadWatchList().filter(c => c !== code));
+        renderWatchExtra();
+      }});
+      row.appendChild(delBtn);
+      box.appendChild(row);
+    }});
+  }}
+  const addBtn = document.getElementById("stock-add-btn");
+  const addInput = document.getElementById("stock-add-input");
+  if (addBtn && addInput) {{
+    addBtn.addEventListener("click", () => {{
+      const code = addInput.value.trim();
+      if (!/^[0-9A-Za-z]{{2,6}}$/.test(code)) return;
+      const list = loadWatchList();
+      if (!list.includes(code)) {{
+        list.push(code);
+        saveWatchList(list);
+        renderWatchExtra();
+      }}
+      addInput.value = "";
+    }});
+  }}
+  renderWatchExtra();
 </script>
 </body>
 </html>
