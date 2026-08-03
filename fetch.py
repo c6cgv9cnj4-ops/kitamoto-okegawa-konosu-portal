@@ -1010,12 +1010,21 @@ def render_coffee_shop_card(shop):
     social_html = (f'<a class="ct-social-btn" href="{esc_x(shop["social_url"])}" target="_blank" rel="noopener">'
                     f'🔗 {esc_x(shop.get("social_label") or "公式SNS")}</a>') if shop.get("social_url") else ""
 
+    latest_review_age = shop["recent_reviews"][0]["age"] if shop.get("recent_reviews") else None
+    badges = []
+    if latest_review_age:
+        badges.append(f"<span class='ct-badge'>直近投稿: {esc_x(latest_review_age)}</span>")
+    badges.append("<span class='ct-badge ct-badge-muted'>月次ペース: データ蓄積中</span>" if len(history) < 2
+                   else f"<span class='ct-badge'>今月 {'+' if diff_reviews >= 0 else ''}{diff_reviews}件</span>")
+    badges_html = "".join(badges)
+
     return f"""
       <div class="rdb-row">
         <span class="rdb-shop">{esc_x(shop['name'])}<br><small style="color:var(--ink-soft);">{esc_x(shop['addr'])}</small></span>
         <span class="rdb-point">★{esc_x(latest['rating'])}</span>
         <span class="rdb-reviews">{latest['reviews']}件</span>
       </div>
+      <div class="ct-badge-row">{badges_html}</div>
       {ann_html}
       <details class="ct-detail-accordion">
         <summary>📊 詳細トラッキングデータ</summary>
@@ -1778,6 +1787,9 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .rdb-point {{ color: #ffb347; font-weight: 700; font-size: 12px; }}
   .rdb-reviews {{ color: var(--ink-soft); font-size: 11px; }}
 
+  .ct-badge-row {{ display: flex; gap: 6px; flex-wrap: wrap; margin-top: -4px; }}
+  .ct-badge {{ background: #1a2b3d; color: #7ec8ff; border-radius: 999px; padding: 3px 9px; font-size: 10.5px; font-weight: 700; }}
+  .ct-badge-muted {{ background: #14171c; color: var(--ink-soft); }}
   .ct-announcement {{ background: #1c2333; border: 1px solid #3b4a6b; border-radius: 8px; padding: 8px 12px; font-size: 12px; margin-top: -2px; margin-bottom: 4px; }}
   .ct-announcement-empty {{ background: #14171c; border: 1px dashed var(--rule); color: var(--ink-soft); }}
   .ct-detail-accordion {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 4px 12px 10px; margin-bottom: 8px; font-size: 12.5px; }}
