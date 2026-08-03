@@ -1509,7 +1509,9 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .page {{ max-width: 860px; margin: 0 auto; padding: 24px 16px 56px; overflow-x: hidden; }}
   header.top {{ margin-bottom: 20px; }}
   header.top h1 {{ font-size: 22px; margin: 0 0 6px; line-height: 1.3; }}
-  header.top .meta {{ color: var(--ink-soft); font-size: 12.5px; }}
+  header.top .meta {{ color: var(--ink-soft); font-size: 12.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }}
+  .refresh-btn {{ display: inline-flex; align-items: center; min-height: 32px; background: var(--bg-raised); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 5px 12px; font-size: 11.5px; font-weight: 700; text-decoration: none; }}
+  .refresh-btn:hover {{ background: var(--accent); color: #0c1116; }}
 
   .tabs {{ display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }}
   .tab-btn {{
@@ -1690,7 +1692,9 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
 <div class="page">
   <header class="top">
     <h1>近隣3市 地域ポータル</h1>
-    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: {now_str}</div>
+    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: {now_str}
+      <a class="refresh-btn" href="{REPO_ACTIONS_URL}/workflows/update.yml" target="_blank" rel="noopener">🔄 今すぐ更新（GitHub Actionsを開く）</a>
+    </div>
   </header>
 
   <section class="block">
