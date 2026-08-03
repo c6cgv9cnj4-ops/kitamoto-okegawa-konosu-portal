@@ -1153,33 +1153,36 @@ def render_medical_gomi_section():
   </details>"""
 
 
-def render_events_section(topics):
+def render_weather_charts():
     hourly = fetch_hourly_forecast()
-    countdowns = extract_event_countdowns(topics)
-    cinema_films = fetch_cinema_week_schedule()
+    if not hourly:
+        return ("<p class='empty'>時間別降水量を取得できませんでした。</p>",
+                "<p class='empty'>時間別気温を取得できませんでした。</p>")
 
-    if hourly:
-        max_mm = max(h["mm"] for h in hourly) or 1
-        precip_bars = "".join(f"""
+    max_mm = max(h["mm"] for h in hourly) or 1
+    precip_bars = "".join(f"""
       <div class="precip-bar-col">
         <div class="precip-bar" style="height:{max(2, int(h['mm'] / max_mm * 80))}px"></div>
         <div class="precip-mm">{h['mm']}</div>
         <div class="precip-time">{h['time'][-3:]}</div>
       </div>""" for h in hourly)
-        precip_html = f"<div class='precip-chart'>{precip_bars}</div>"
+    precip_html = f"<div class='precip-chart'>{precip_bars}</div>"
 
-        min_t, max_t = min(h["temp"] for h in hourly), max(h["temp"] for h in hourly)
-        span = (max_t - min_t) or 1
-        temp_bars = "".join(f"""
+    min_t, max_t = min(h["temp"] for h in hourly), max(h["temp"] for h in hourly)
+    span = (max_t - min_t) or 1
+    temp_bars = "".join(f"""
       <div class="precip-bar-col">
         <div class="temp-bar" style="height:{max(2, int((h['temp'] - min_t) / span * 80))}px"></div>
         <div class="precip-mm">{h['temp']}℃</div>
         <div class="precip-time">{h['time'][-3:]}</div>
       </div>""" for h in hourly)
-        temp_html = f"<div class='precip-chart'>{temp_bars}</div>"
-    else:
-        precip_html = "<p class='empty'>時間別降水量を取得できませんでした。</p>"
-        temp_html = "<p class='empty'>時間別気温を取得できませんでした。</p>"
+    temp_html = f"<div class='precip-chart'>{temp_bars}</div>"
+    return precip_html, temp_html
+
+
+def render_events_section(topics):
+    countdowns = extract_event_countdowns(topics)
+    cinema_films = fetch_cinema_week_schedule()
 
     if countdowns:
         cd_cards = "".join(f"""
@@ -1225,11 +1228,7 @@ def render_events_section(topics):
 
     return f"""
   <details class="block accordion">
-    <summary>🎪 イベント・天気・エンタメ</summary>
-    <h4>時間別降水量（mm/h・本日〜24時間）</h4>
-    {precip_html}
-    <h4>時間別気温（℃・本日〜24時間）</h4>
-    {temp_html}
+    <summary>🎪 イベント・エンタメ</summary>
     <h4>開催日が確認できたイベント（最新3件）</h4>
     {countdown_html}
     <h4>こうのすシネマ 上映スケジュール（作品タップで日程表示）</h4>
@@ -1577,6 +1576,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
     # log_skip()を呼びうる）がすべて完了した後に行う必要がある。
     # 先に文字列化してしまうと、この時点より後に発生したスキップが
     # フッターの一覧に反映されない不具合になるため、必ず最後に計算する。
+    precip_html, temp_html = render_weather_charts()
     shopping_html = render_shopping_section()
     ramen_db_html = render_ramen_db_section()
     coffee_shops_html = render_coffee_shops_section()
@@ -1829,8 +1829,13 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   </section>
 
   <section class="block">
-    <h2>② 地震情報（埼玉県が対象に含まれるもののみ・気象庁XML）</h2>
+    <h2>② 気象・防災情報（地震・降水量・気温）</h2>
+    <h4>地震情報（埼玉県が対象に含まれるもののみ・気象庁XML）</h4>
     {render_earthquake_section(earthquakes)}
+    <h4>時間別降水量（mm/h・本日〜24時間）</h4>
+    {precip_html}
+    <h4>時間別気温（℃・本日〜24時間）</h4>
+    {temp_html}
   </section>
 
   <div class="tabs">
