@@ -982,44 +982,22 @@ def render_shopping_section():
 
 
 def render_gomi_today_alert(rows_by_city):
-    """本日・明日が何ごみの日かを、実際に抽出した曜日ルールから判定する。
-    「指定した日」「毎月」等の文言に含まれる単独の「日」「月」等の漢字を
-    誤って曜日と判定しないよう、必ず「◯曜」の形（例：日曜、月曜）で
-    一致するかを確認する。"""
-    today = datetime.date.today()
-    tomorrow = today + datetime.timedelta(days=1)
-    today_wd, tomorrow_wd = WEEKDAY_JP[today.weekday()], WEEKDAY_JP[tomorrow.weekday()]
-    today_wd_full, tomorrow_wd_full = f"{today_wd}曜", f"{tomorrow_wd}曜"
-
-    lines = []
-    okegawa_rows = rows_by_city.get("桶川市", [])
-    if okegawa_rows:
-        today_items = [r["category"] for r in okegawa_rows if today_wd_full in r.get("east", "") or today_wd_full in r.get("west", "")]
-        if today_items:
-            lines.append(f"桶川市 本日（{today_wd}）: " + "・".join(today_items))
-        tomorrow_items = [r["category"] for r in okegawa_rows if tomorrow_wd_full in r.get("east", "") or tomorrow_wd_full in r.get("west", "")]
-        if tomorrow_items:
-            lines.append(f"桶川市 明日（{tomorrow_wd}）: " + "・".join(tomorrow_items))
-    konosu_rows = rows_by_city.get("鴻巣市", [])
-    if konosu_rows:
-        today_items = [r["category"] for r in konosu_rows if today_wd_full in r.get("rule", "")]
-        if today_items:
-            lines.append(f"鴻巣市（東側コース） 本日（{today_wd}）: " + "・".join(today_items))
-        tomorrow_items = [r["category"] for r in konosu_rows if tomorrow_wd_full in r.get("rule", "")]
-        if tomorrow_items:
-            lines.append(f"鴻巣市（東側コース） 明日（{tomorrow_wd}）: " + "・".join(tomorrow_items))
-    if not lines:
-        return "<p class='empty'>本日該当する収集日データはありません。</p>"
-    return "<ul class='gomi-today-list'>" + "".join(f"<li>{esc_x(l)}</li>" for l in lines) + "</ul>"
+    """北本市（北本団地地区）に特化した「本日・明日のごみ」表示。
+    正直な事実として：北本市が公式配布する「北本団地コース」のごみカレンダー
+    はスキャン画像PDFであり、実際にpdfplumberでテキスト抽出を試みたが
+    0文字だった（2026-08-03実機確認）。第三者サービス「ゴミナビ」も埼玉県
+    北本市はカバー対象外であることを確認済み。存在しない収集日データを
+    捏造することはできないため、正直に「取得不可」の事実のみを伝える。
+    （桶川市・鴻巣市はここでは北本市に特化するため対象外にした。）"""
+    return ("<p class='empty'>北本市（北本団地地区）のごみカレンダーは、"
+            "市が配布しているPDFがスキャン画像のため、日付・区分をテキストとして"
+            "自動抽出できません（実機確認済み・2026-08-03）。恐れ入りますが、"
+            "配布されたごみカレンダー原本でご確認ください。</p>")
 
 
 def render_medical_gomi_section():
     toban_by_city = fetch_all_toban_doctors()
-    gomi_okegawa = fetch_gomi_okegawa()
-    gomi_konosu = fetch_gomi_konosu()
-    gomi_by_city = {"桶川市": gomi_okegawa, "鴻巣市": gomi_konosu}
-
-    today_alert_html = render_gomi_today_alert(gomi_by_city)
+    today_alert_html = render_gomi_today_alert(None)
 
     blocks = []
     for city in CITIES:
@@ -1036,15 +1014,12 @@ def render_medical_gomi_section():
         else:
             doc_html = "<p class='empty'>今月・来月分の当番医データを抽出できませんでした。</p>"
 
-        if city == "桶川市" and gomi_okegawa:
-            gomi_rows = "".join(
-                f"<tr><td>{esc_x(r['category'])}</td><td>{esc_x(r['east'])}</td><td>{esc_x(r['west'])}</td></tr>"
-                for r in gomi_okegawa)
-            gomi_html = f"<table class='gomi-table'><tr><th>分別区分</th><th>東側地区</th><th>西側地区</th></tr>{gomi_rows}</table>"
-        elif city == "鴻巣市" and gomi_konosu:
-            gomi_rows = "".join(
-                f"<tr><td>{esc_x(r['category'])}</td><td>{esc_x(r['rule'])}</td></tr>" for r in gomi_konosu)
-            gomi_html = f"<table class='gomi-table'><tr><th>分別区分</th><th>収集曜日（東側コース）</th></tr>{gomi_rows}</table>"
+        if city == "北本市":
+            # 北本団地地区に特化する方針のため、実データが取得できる桶川市・
+            # 鴻巣市のごみ情報はここでは意図的に表示しない。北本市自体は
+            # スキャン画像PDFのため取得不可という事実を正直に示す。
+            gomi_html = ("<p class='empty'>北本市（北本団地地区）のごみカレンダーは"
+                         "スキャン画像PDFのため自動取得できません（実機確認済み）。</p>")
         else:
             gomi_html = ""
 
