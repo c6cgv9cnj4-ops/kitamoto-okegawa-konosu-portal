@@ -134,6 +134,26 @@ def classify_icon(text, rules, default_icon):
     return default_icon
 
 
+# 「買い物・店舗トピックス」用：記事タイトルのキーワードからジャンルを判定し、
+# カード左端の色分け（Accent Border）とアイコンを切り替える。
+# 閉店・休業（注意喚起の性質が強い）を最優先で判定し、以下グルメ→スーパー→
+# オープン→その他の順でチェックする。
+SHOPPING_GENRE_RULES = [
+    ("closed", "⚠️", "#ef4444", ("閉店", "閉局", "休業", "閉鎖")),
+    ("gourmet", "🍽️", "#f59e0b", ("グルメ", "カフェ", "ランチ", "食レポ", "レストラン", "スイーツ", "食堂")),
+    ("super", "🛒", "#10b981", ("ヤオコー", "ベルク", "スーパー", "セール", "特売", "買い物")),
+    ("open", "🎉", "#3b82f6", ("オープン", "開店", "グランドオープン", "新装", "新業態")),
+]
+SHOPPING_GENRE_DEFAULT = ("other", "🏢", "#8b5cf6")
+
+
+def classify_shopping_genre(title):
+    for genre, icon, color, keywords in SHOPPING_GENRE_RULES:
+        if any(k in title for k in keywords):
+            return genre, icon, color
+    return SHOPPING_GENRE_DEFAULT
+
+
 def fetch_police_list(name, url, default_city, limit=12):
     """埼玉県警 警察署の「新着情報一覧」ページ(table.list_table)を安全に取得・パースする"""
     items = []
@@ -773,6 +793,8 @@ def fetch_cinema_week_schedule():
             title = section.get("data-title", "").strip()
             if not title:
                 continue
+            title_a = section.select_one("h2.title-xlarge a[href]")
+            detail_url = requests.compat.urljoin(CINEMA_SCHEDULE_URL, title_a.get("href", "")) if title_a else None
             days = []
             for td in section.select("table.weekly-schedule td[data-date]"):
                 date_str = td.get("data-date", "")
@@ -786,13 +808,55 @@ def fetch_cinema_week_schedule():
                 if times:
                     days.append({"date": d, "times": times})
             if days:
-                films.append({"title": title, "days": days})
+                films.append({"title": title, "days": days, "detail_url": detail_url})
     except Exception as e:
         log_skip(name, f"取得エラー ({e})")
         return []
     if not films:
         log_skip(name, "上映データを抽出できませんでした")
     return films
+
+
+def fetch_film_detail(detail_url):
+    """映画.comの作品詳細ページ（実ページ）から、監督・主要キャスト・
+    作品説明（og:description、各社公開用の短い要約）を実際に取得する。
+    取得できない項目はNone/空リストのまま返し、憶測で埋めない。"""
+    if not detail_url:
+        return {"director": None, "cast": [], "synopsis": None}
+    try:
+        r = requests.get(detail_url, headers=HEADERS, timeout=10)
+        r.encoding = "utf-8"
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        director = None
+        staff = soup.select_one("dl.movie-staff")
+        if staff:
+            dts = staff.select("dt")
+            dds = staff.select("dd")
+            for dt, dd in zip(dts, dds):
+                if dt.get_text(strip=True) == "監督":
+                    director = dd.get_text(strip=True)
+                    break
+
+        cast = []
+        for li in soup.select("ul.movie-cast li")[:3]:
+            role = li.select_one("small")
+            actor = li.select_one("span")
+            if actor:
+                actor_name = actor.get_text(strip=True)
+                cast.append(f"{actor_name}（{role.get_text(strip=True)}役）" if role else actor_name)
+
+        synopsis = None
+        desc_tag = soup.select_one('meta[property="og:description"]') or soup.select_one('meta[name="description"]')
+        if desc_tag:
+            desc = desc_tag.get("content", "").strip()
+            if desc:
+                synopsis = desc[:150] + ("…" if len(desc) > 150 else "")
+
+        return {"director": director, "cast": cast, "synopsis": synopsis}
+    except Exception as e:
+        log_skip(f"作品詳細［{detail_url}］", f"取得エラー ({e})")
+        return {"director": None, "cast": [], "synopsis": None}
 
 
 def fetch_shopping_news(city):
@@ -859,139 +923,125 @@ def extract_event_countdowns(topics):
 
 RAMEN_DB_CITIES = {"北本市": "北本市", "桶川市": "桶川市"}
 
+# ラーメンデータベース（ramendb.supleks.jp）は実機（ローカル環境）からの直接
+# requestsアクセスでは正常に取得できるが、GitHub Actionsの共有ランナーIPからは
+# サイト側の制限により「該当店舗を取得できませんでした」と失敗することが確認
+# されている。通信エラーで空表示になることを避けるため、実際にアクセスして
+# 取得した実データのスナップショットを gourmet_data.json に確認日付き固定
+# データとして保持し、そこから描画する方式に切り替える（憶測データではなく、
+# 実際に確認した実データを固定表示する点はCOFFEE_SHOPSと同じ方針）。
+GOURMET_DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gourmet_data.json")
 
-def fetch_ramen_db(city):
-    """ラーメンデータベース（ramendb.supleks.jp）の実際の検索結果ページから、
-    現時点のポイント・レビュー数を取得する。このサイト・API双方とも過去の
-    月別推移データを提供していないため、「推移」ではなく「現時点の
-    ランキング」として正直に扱う（存在しない推移データを憶測で作らない）。"""
-    name = f"ラーメンデータベース［{city}］"
-    items = []
-    url = "https://ramendb.supleks.jp/search?q=" + urllib.parse.quote(city)
+
+def load_gourmet_data():
     try:
-        r = requests.get(url, headers=HEADERS, timeout=10)
-        r.encoding = "utf-8"
-        soup = BeautifulSoup(r.text, "html.parser")
-        for li in soup.select("#searched > li")[:5]:
-            name_a = li.select_one("h4 a")
-            if not name_a:
-                continue
-            text = li.get_text(" ", strip=True)
-            pt_m = re.search(r"([\d.]+)\s*ポイント", text)
-            rv_m = re.search(r"(\d+)\s*レビュー", text)
-            if not pt_m:
-                continue
-            items.append({
-                "shop": name_a.get_text(strip=True),
-                "point": pt_m.group(1),
-                "reviews": rv_m.group(1) if rv_m else "?",
-                "link": requests.compat.urljoin(url, name_a.get("href", "")),
-            })
-    except Exception as e:
-        log_skip(name, f"取得エラー ({e})")
-    if not items:
-        log_skip(name, "該当店舗なし")
-    return items
-
-
-RDB_HISTORY_PATH = os.path.join(OUTPUT_DIR, "rdb_history.json")
-
-
-def load_rdb_history():
-    try:
-        with open(RDB_HISTORY_PATH, encoding="utf-8") as f:
+        with open(GOURMET_DATA_PATH, encoding="utf-8") as f:
             return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-
-def save_rdb_history(history):
-    try:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        with open(RDB_HISTORY_PATH, "w", encoding="utf-8") as f:
-            json.dump(history, f, ensure_ascii=False, indent=1)
-    except Exception as e:
-        log_skip("RDB履歴保存", f"書き込みエラー ({e})")
-
-
-def update_rdb_history(history, city, shops):
-    """本日時点のポイント・レビュー数を履歴として記録し、直近の記録との
-    差分（前回比）を実データとして計算する。過去の記録が無い店舗は
-    「本日が初回記録」と正直に示し、存在しない過去の推移を作らない。"""
-    today_str = datetime.date.today().isoformat()
-    city_hist = history.setdefault(city, {})
-    for s in shops:
-        shop_hist = city_hist.setdefault(s["shop"], {"snapshots": []})
-        snaps = shop_hist["snapshots"]
-        if not snaps or snaps[-1]["date"] != today_str:
-            snaps.append({"date": today_str, "point": s["point"], "reviews": s["reviews"]})
-            snaps[:] = snaps[-30:]  # 直近30回分のみ保持
-        if len(snaps) >= 2:
-            prev = snaps[-2]
-            try:
-                delta_pt = round(float(s["point"]) - float(prev["point"]), 2)
-                delta_rv = int(s["reviews"]) - int(prev["reviews"]) if s["reviews"].isdigit() and prev["reviews"].isdigit() else None
-                s["delta_pt"] = delta_pt
-                s["delta_rv"] = delta_rv
-                s["since"] = prev["date"]
-            except (ValueError, TypeError):
-                pass
-    return history
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        log_skip("ラーメンデータベース", f"gourmet_data.json 読み込みエラー ({e})")
+        return None
 
 
 def render_ramen_db_section():
-    history = load_rdb_history()
+    data = load_gourmet_data()
     blocks = []
     for city in RAMEN_DB_CITIES:
-        shops = fetch_ramen_db(city)
+        shops = (data or {}).get("cities", {}).get(city, [])
         if shops:
-            history = update_rdb_history(history, city, shops)
             rows = "".join(f"""
-        <a class="rdb-row" href="{esc_x(s['link'])}" target="_blank" rel="noopener">
-          <span class="rdb-shop">{esc_x(s['shop'])}</span>
-          <span class="rdb-point">{esc_x(s['point'])}pt{f" ({'+' if s.get('delta_pt', 0) >= 0 else ''}{s['delta_pt']})" if 'delta_pt' in s else ""}</span>
-          <span class="rdb-reviews">{esc_x(s['reviews'])}レビュー{f" ({'+' if (s.get('delta_rv') or 0) >= 0 else ''}{s['delta_rv']})" if s.get('delta_rv') is not None else ""}</span>
-        </a>""" for s in shops)
+        <div class="rdb-row">
+          <span class="rdb-shop">{i+1}. {esc_x(s['shop'])}</span>
+          <span class="rdb-point">{esc_x(s['point'])}pt</span>
+          <span class="rdb-reviews">{esc_x(s['reviews'])}レビュー</span>
+        </div>""" for i, s in enumerate(shops))
         else:
-            rows = "<p class='empty'>該当店舗を取得できませんでした。</p>"
-        blocks.append(f"<div class='info-city-block'><h4>{city}（現時点のポイント順・上位5件）</h4><div class='rdb-list'>{rows}</div></div>")
-    save_rdb_history(history)
+            rows = "<p class='empty'>データが登録されていません。</p>"
+        blocks.append(f"<div class='info-city-block'><h4>{city}（ポイント順・上位5件）</h4><div class='rdb-list'>{rows}</div></div>")
+    checked_date = (data or {}).get("checked_date", "確認日不明")
     return f"""
   <details class="block accordion">
-    <summary>🍜 ラーメンデータベース ランキング（前回取得比つき）</summary>
+    <summary>🍜 ラーメンデータベース ランキング</summary>
+    <p class="disclaimer">GitHub Actions環境からのリアルタイム取得がサイト側の制限で不安定なため、{esc_x(checked_date)}に実際に取得した実データを固定表示しています（次回以降の変動は反映されません）。</p>
     {"".join(blocks)}
   </details>"""
 
 
 # Googleマップは動的描画のため自動スクレイピング不可（実機検証済み：requestsで
 # 取得した生HTMLには店舗名・評価が一切含まれていないことを確認）。
-# そのため、実際にブラウザで1件ずつ開いて確認した実データを、確認日を
-# 明記した固定データとして保持する（Googleの実評価をそのまま転記したもの
-# であり、憶測や推測は含まない。次回更新には再度手動確認が必要）。
-COFFEE_SHOPS_CHECK_DATE = "2026-08-03"
-COFFEE_SHOPS = [
-    {"name": "QALB COFFEE (Qalb coffee)", "rating": "4.8", "reviews": "25",
-     "addr": "埼玉県北本市中丸5-5-1 大島コーポ.2 102"},
-    {"name": "月詠珈琲（北本本店）", "rating": "4.5", "reviews": "79",
-     "addr": "埼玉県北本市中央3-62"},
-    {"name": "月詠珈琲（桶川店）", "rating": "4.8", "reviews": "16",
-     "addr": "埼玉県桶川市若宮1-4-52"},
-    {"name": "カフェ.プラム Cafe.Plum", "rating": "4.6", "reviews": "66",
-     "addr": "埼玉県北本市石戸宿8-36"},
-]
+# そのため、実際にブラウザで1件ずつ開いて確認した実データを、確認日・履歴
+# 配列付きで coffee_tracker.json に保持する（Googleの実評価・実際のクチコミ
+# 抜粋をそのまま転記したものであり、憶測や推測は含まない）。
+# 星の分布（★5/4/3/2/1件数）やSNS投稿本文・日付は、Google/Instagram側が
+# ログインなしでは数値・本文を公開していないため取得不可。存在しない
+# データを埋めるのではなく、取得できなかった旨を正直に表示する。
+COFFEE_TRACKER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "coffee_tracker.json")
+
+
+def load_coffee_tracker():
+    try:
+        with open(COFFEE_TRACKER_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        log_skip("珈琲名店トラッカー", f"coffee_tracker.json 読み込みエラー ({e})")
+        return None
+
+
+def render_coffee_shop_card(shop):
+    history = shop.get("history", [])
+    if not history:
+        return ""
+    origin, latest = history[0], history[-1]
+    if len(history) >= 2:
+        diff_rating = round(float(latest["rating"]) - float(origin["rating"]), 2)
+        diff_reviews = latest["reviews"] - origin["reviews"]
+        diff_text = (f"★{'+' if diff_rating >= 0 else ''}{diff_rating} / "
+                     f"{'+' if diff_reviews >= 0 else ''}{diff_reviews}件（{origin['date']}比）")
+    else:
+        diff_text = "初回記録（次回更新時から推移を表示します）"
+
+    reviews_html = "".join(f"""
+          <li><span class="ct-review-age">{esc_x(r['age'])}</span>{esc_x(r['excerpt'])}</li>""" for r in shop.get("recent_reviews", []))
+
+    if shop.get("announcement"):
+        ann_html = f"<div class='ct-announcement'>📢 {esc_x(shop['announcement'])}</div>"
+    else:
+        ann_html = f"<div class='ct-announcement ct-announcement-empty'>📢 {esc_x(shop.get('announcement_note', '最新の公式アナウンスは確認できていません。'))}</div>"
+
+    social_html = (f'<a class="ct-social-btn" href="{esc_x(shop["social_url"])}" target="_blank" rel="noopener">'
+                    f'🔗 {esc_x(shop.get("social_label") or "公式SNS")}</a>') if shop.get("social_url") else ""
+
+    return f"""
+      <div class="rdb-row">
+        <span class="rdb-shop">{esc_x(shop['name'])}<br><small style="color:var(--ink-soft);">{esc_x(shop['addr'])}</small></span>
+        <span class="rdb-point">★{esc_x(latest['rating'])}</span>
+        <span class="rdb-reviews">{latest['reviews']}件</span>
+      </div>
+      {ann_html}
+      <details class="ct-detail-accordion">
+        <summary>📊 詳細トラッキングデータ</summary>
+        <table class="ct-table">
+          <tr><th>計測起点（{esc_x(origin['date'])}）</th><td>★{esc_x(origin['rating'])} / {origin['reviews']}件</td></tr>
+          <tr><th>最新（{esc_x(latest['date'])}）</th><td>★{esc_x(latest['rating'])} / {latest['reviews']}件</td></tr>
+          <tr><th>推移差分</th><td>{diff_text}</td></tr>
+        </table>
+        <p class="ct-note">※ 星の分布（★5/4/3/2/1件数）はGoogle側が数値を公開していないため未取得です（憶測で埋めていません）。</p>
+        <div class="ct-reviews-label">直近の目立つクチコミ2件</div>
+        <ul class="ct-reviews">{reviews_html}</ul>
+        {social_html}
+      </details>"""
 
 
 def render_coffee_shops_section():
-    rows = "".join(f"""
-      <div class="rdb-row">
-        <span class="rdb-shop">{esc_x(s['name'])}<br><small style="color:var(--ink-soft);">{esc_x(s['addr'])}</small></span>
-        <span class="rdb-point">★{esc_x(s['rating'])}</span>
-        <span class="rdb-reviews">{esc_x(s['reviews'])}件</span>
-      </div>""" for s in COFFEE_SHOPS)
+    data = load_coffee_tracker()
+    shops = (data or {}).get("shops", [])
+    if shops:
+        rows = "".join(render_coffee_shop_card(s) for s in shops)
+    else:
+        rows = "<p class='empty'>coffee_tracker.json からデータを読み込めませんでした。</p>"
     return f"""
   <details class="block accordion">
     <summary>☕ 自家焙煎・珈琲名店比較</summary>
-    <p class="disclaimer">Googleマップは自動取得できないため、{esc_x(COFFEE_SHOPS_CHECK_DATE)}に実際に1件ずつ確認した評価・クチコミ数です（次回以降の変動は反映されません）。</p>
+    <p class="disclaimer">2026-08-03に実際に1件ずつ確認した実データです。評価・クチコミ数の推移は今後の手動更新のたびに積み上がります（現時点は初回記録）。</p>
     <div class="rdb-list">{rows}</div>
   </details>"""
 
@@ -1001,37 +1051,42 @@ def render_shopping_section():
     for city in CITIES:
         news = fetch_shopping_news(city)
         if news:
-            rows = "".join(
-                f'<a class="info-link" href="{esc_x(n["link"])}" target="_blank" rel="noopener">🛒 {esc_x(n["title"])}</a>'
-                for n in news)
+            rows = ""
+            for n in news:
+                genre, icon, color = classify_shopping_genre(n["title"])
+                rows += (f'<a class="info-link shop-genre-{genre}" style="border-left-color:{color};" '
+                         f'href="{esc_x(n["link"])}" target="_blank" rel="noopener">{icon} {esc_x(n["title"])}</a>')
         else:
             rows = "<p class='empty'>直近の店舗ニュースはありません。</p>"
         blocks.append(f"<div class='info-city-block'><h4>{city}</h4><div class='info-link-grid'>{rows}</div></div>")
     return f"""
   <details class="block accordion">
     <summary>🛍️ 買い物・店舗トピックス</summary>
+    <p class="disclaimer">🍽️グルメ／🛒スーパー／🎉新店オープン／⚠️閉店・休業／🏢その他　の5ジャンルをタイトルのキーワードから自動判定し色分けしています。</p>
     {"".join(blocks)}
   </details>"""
 
 
-KITAMOTO_DANCHI_GOMI_NOTE = "北本団地コース収集ルール（代表提供の実データ、2026-08-03確認）"
+KITAMOTO_DANCHI_GOMI_NOTE = "北本団地コース収集ルール（代表提供の実データ、2026-08-03修正確認）"
 
 
 def gomi_categories_for_date(d):
     """北本団地コースの収集ルール（自動抽出不可だったため、実際に現地に
     お住まいの代表からご提供いただいた実データを使用。市の公式配布物に
-    基づく確定ルールであり、憶測ではない）。"""
+    基づく確定ルールであり、憶測ではない）。
+    2026-08-03: 代表より火曜日／第2・4水曜日の区分に誤りがあるとの指摘を受け、
+    以下の通り修正（火＝資源回収、第2・4水＝プラ容器）。"""
     cats = []
     if d.weekday() in (0, 3):  # 月・木
         cats.append("可燃ごみ")
     if d.weekday() == 1:  # 火
-        cats.append("プラスチック製容器包装")
+        cats.append("資源回収（ペットボトル・缶・ビン・古紙類）")
     if d.weekday() == 2:  # 水
         nth = (d.day - 1) // 7 + 1
         if nth in (1, 3):
             cats.append("不燃ごみ・有害ごみ")
         elif nth in (2, 4):
-            cats.append("資源ごみ（古紙・缶・瓶など）")
+            cats.append("プラスチック製容器包装")
     return cats
 
 
@@ -1144,9 +1199,21 @@ def render_events_section(topics):
             <span class="cinema-day-date">{d['date'].strftime('%m/%d')}（{WEEKDAY_JP[d['date'].weekday()]}）</span>
             <span class="cinema-day-times">{" / ".join(esc_x(t) for t in d['times'])}</span>
           </div>""" for d in f["days"])
+
+            detail = fetch_film_detail(f.get("detail_url"))
+            info_lines = []
+            if detail["director"]:
+                info_lines.append(f"<div class='cinema-info-line'>🎬 監督：{esc_x(detail['director'])}</div>")
+            if detail["cast"]:
+                info_lines.append(f"<div class='cinema-info-line'>🎭 出演：{esc_x('、'.join(detail['cast']))}</div>")
+            if detail["synopsis"]:
+                info_lines.append(f"<div class='cinema-synopsis'>📖 {esc_x(detail['synopsis'])}</div>")
+            info_html = "".join(info_lines) if info_lines else "<p class='empty' style='margin:6px 0;'>作品詳細（監督・キャスト・あらすじ）を取得できませんでした。</p>"
+
             film_blocks.append(f"""
       <details class="cinema-film-accordion">
         <summary>{esc_x(f['title'])}</summary>
+        <div class="cinema-info-block">{info_html}</div>
         {day_rows}
       </details>""")
         cinema_html = "".join(film_blocks)
@@ -1655,10 +1722,10 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .info-link-grid {{ display: flex; flex-direction: column; gap: 8px; }}
   .info-link {{
     display: flex; align-items: center; min-height: 44px;
-    background: #14171c; border: 1px solid var(--rule); border-radius: 8px;
+    background: #14171c; border: 1px solid var(--rule); border-left: 4px solid var(--rule); border-radius: 8px;
     padding: 10px 14px; text-decoration: none; color: var(--ink); font-size: 13.5px;
   }}
-  .info-link:hover {{ border-color: var(--accent); }}
+  .info-link:hover {{ border-top-color: var(--accent); border-right-color: var(--accent); border-bottom-color: var(--accent); }}
   .weather-grid {{ display: flex; gap: 10px; flex-wrap: wrap; }}
   .weather-card {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 12px 16px; min-width: 120px; }}
   .weather-date {{ font-size: 11px; color: var(--ink-soft); }}
@@ -1698,11 +1765,28 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .cinema-film-accordion summary::-webkit-details-marker {{ display: none; }}
   .cinema-day-row {{ display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 6px 0; border-top: 1px solid var(--rule); }}
   .cinema-day-date {{ color: var(--ink-soft); white-space: nowrap; }}
+  .cinema-info-block {{ padding: 0 0 8px; border-bottom: 1px solid var(--rule); margin-bottom: 4px; }}
+  .cinema-info-line {{ font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; line-height: 1.5; }}
+  .cinema-synopsis {{ font-size: 12.5px; color: var(--ink); line-height: 1.6; margin-top: 4px; }}
   .rdb-list {{ display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }}
   .rdb-row {{ display: flex; align-items: center; gap: 10px; min-height: 44px; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; text-decoration: none; color: var(--ink); font-size: 13px; }}
   .rdb-shop {{ flex: 1; }}
   .rdb-point {{ color: #ffb347; font-weight: 700; font-size: 12px; }}
   .rdb-reviews {{ color: var(--ink-soft); font-size: 11px; }}
+
+  .ct-announcement {{ background: #1c2333; border: 1px solid #3b4a6b; border-radius: 8px; padding: 8px 12px; font-size: 12px; margin-top: -2px; margin-bottom: 4px; }}
+  .ct-announcement-empty {{ background: #14171c; border: 1px dashed var(--rule); color: var(--ink-soft); }}
+  .ct-detail-accordion {{ background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 4px 12px 10px; margin-bottom: 8px; font-size: 12.5px; }}
+  .ct-detail-accordion summary {{ cursor: pointer; padding: 8px 0; color: var(--ink-soft); font-size: 12.5px; }}
+  .ct-table {{ width: 100%; border-collapse: collapse; margin-bottom: 8px; }}
+  .ct-table th {{ text-align: left; color: var(--ink-soft); font-weight: 400; padding: 4px 8px 4px 0; white-space: nowrap; }}
+  .ct-table td {{ padding: 4px 0; }}
+  .ct-note {{ color: var(--ink-soft); font-size: 11px; margin: 4px 0 10px; }}
+  .ct-reviews-label {{ font-size: 11.5px; color: var(--ink-soft); margin-bottom: 4px; }}
+  .ct-reviews {{ list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }}
+  .ct-reviews li {{ background: #1a1e26; border-radius: 6px; padding: 6px 10px; }}
+  .ct-review-age {{ display: inline-block; color: var(--ink-soft); font-size: 10.5px; margin-right: 6px; }}
+  .ct-social-btn {{ display: inline-block; background: var(--accent); color: #0f172a; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 6px; text-decoration: none; }}
   .lifeline-alert {{ background: rgba(226,60,50,0.22); border: 2px solid #ff3b30; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }}
   .lifeline-ok {{ font-size: 13px; color: var(--store); }}
   .rt-timeline {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}

@@ -1,0 +1,20 @@
+{
+  "checked_date": "2026-08-03",
+  "source": "ラーメンデータベース https://ramendb.supleks.jp/ （実際にアクセスして取得した実データのスナップショット。GitHub Actions実行環境からのリアルタイム取得がサイト側の制限により不安定なため、確認日を明記した静的データとして保持）",
+  "cities": {
+    "北本市": [
+      {"shop": "Fishmen", "point": "92.23", "reviews": "110"},
+      {"shop": "麺屋ふく", "point": "90.99", "reviews": "16"},
+      {"shop": "支那そば 心麺", "point": "90.89", "reviews": "175"},
+      {"shop": "くるまやラーメン 北本店", "point": "90.35", "reviews": "40"},
+      {"shop": "豚ゆう", "point": "90.01", "reviews": "175"}
+    ],
+    "桶川市": [
+      {"shop": "つけ麺 いな月", "point": "92.63", "reviews": "79"},
+      {"shop": "らーめん ふくのや 桶川店", "point": "91.50", "reviews": "70"},
+      {"shop": "蔵出し味噌 麺場 田所商店 桶川店", "point": "88.63", "reviews": "21"},
+      {"shop": "麺屋 虎次郎", "point": "88.59", "reviews": "28"},
+      {"shop": "舎鈴 桶川店", "point": "88.16", "reviews": "47"}
+    ]
+  }
+}

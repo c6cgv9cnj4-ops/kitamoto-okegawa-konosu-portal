@@ -1,0 +1,69 @@
+{
+  "note": "Googleマップは自動スクレイピング不可のため、実際にブラウザで1件ずつ開いて確認した実データのみを記録する。星の分布（★5/4/3/2/1件数）はGoogle側が正確な内訳を数値公開していないため取得不可、憶測で埋めない。月次増加ペースは2回目以降の実測が揃ってから算出する（現時点は初回記録のためnull）。SNSの投稿本文・日付はログインなしでは取得できないため、announcementは実際に確認できたもの以外はnullとし、憶測で埋めない。",
+  "shops": [
+    {
+      "id": "qalb",
+      "name": "QALB COFFEE (Qalb coffee)",
+      "addr": "埼玉県北本市中丸5-5-1 大島コーポ.2 102",
+      "social_url": "https://www.facebook.com/profile.php?id=100082402596578",
+      "social_label": "Facebook",
+      "announcement": null,
+      "announcement_note": "SNS投稿の自動取得は不可（要ログイン）のため、最新のお知らせはFacebookで直接ご確認ください。",
+      "recent_reviews": [
+        {"age": "4か月前", "excerpt": "私が知るカフェの中で一番コーヒーが美味しいかもしれません。キッシュもケーキも美味しい。"},
+        {"age": "8か月前", "excerpt": "北本方面に用事があり、コーヒー屋さんを探して立ち寄りました。落ち着いた雰囲気でゆっくり過ごせます。"}
+      ],
+      "history": [
+        {"date": "2026-08-03", "rating": "4.8", "reviews": 25}
+      ]
+    },
+    {
+      "id": "tsukuyomi_kitamoto",
+      "name": "月詠珈琲（北本本店）",
+      "addr": "埼玉県北本市中央3-62",
+      "social_url": "https://instagram.com/kitamoto_coffee_tukuyomi",
+      "social_label": "Instagram",
+      "announcement": null,
+      "announcement_note": "SNS投稿の自動取得は不可（要ログイン）のため、最新のお知らせはInstagramで直接ご確認ください。",
+      "recent_reviews": [
+        {"age": "2か月前", "excerpt": "雰囲気も過ごしやすく、ソファー席がふわふわで何時間でもいられそうです。"},
+        {"age": "8か月前", "excerpt": "とっても気に入りました！内装は落ち着く感じでとてもセンスがよく居心地の良い雰囲気でした。"}
+      ],
+      "history": [
+        {"date": "2026-08-03", "rating": "4.5", "reviews": 79}
+      ]
+    },
+    {
+      "id": "tsukuyomi_okegawa",
+      "name": "月詠珈琲（桶川店）",
+      "addr": "埼玉県桶川市若宮1-4-52",
+      "social_url": null,
+      "social_label": null,
+      "announcement": null,
+      "announcement_note": "Googleマップ上に公式サイト・SNS情報の登録がなく、お盆休み等の最新情報は確認できませんでした（未確認情報のため掲載を見送っています）。",
+      "recent_reviews": [
+        {"age": "3か月前", "excerpt": "カフェが出来たとのことで来店。キノコも入った食べごたえのあるカルボナーラで美味しかったです。"},
+        {"age": "4か月前", "excerpt": "コーヒーの種類が豊富で、ほぼカフェインが含まれない水出しコーヒーもありました。"}
+      ],
+      "history": [
+        {"date": "2026-08-03", "rating": "4.8", "reviews": 16}
+      ]
+    },
+    {
+      "id": "cafe_plum",
+      "name": "カフェ.プラム Cafe.Plum",
+      "addr": "埼玉県北本市石戸宿8-36",
+      "social_url": "https://instagram.com/cafe.plum2021",
+      "social_label": "Instagram",
+      "announcement": "6/26・27・28に臨時休業とのオーナー投稿がありましたが、既に終了したお知らせです（2026/06/26付、Googleマップより）",
+      "announcement_note": "上記は取得できた最新のオーナー投稿ですが日付が古いため参考情報です。直近のお盆休み等の予定はInstagramで直接ご確認ください。",
+      "recent_reviews": [
+        {"age": "3か月前", "excerpt": "米粉で作られたシフォンケーキとマフィン、グルテンフリーでご好評とのこと。"},
+        {"age": "4か月前", "excerpt": "犬連れでも同伴席あり。良い雰囲気のお店。"}
+      ],
+      "history": [
+        {"date": "2026-08-03", "rating": "4.6", "reviews": 66}
+      ]
+    }
+  ]
+}
