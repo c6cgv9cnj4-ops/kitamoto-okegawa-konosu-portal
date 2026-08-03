@@ -1209,12 +1209,15 @@ def render_events_section(topics):
             if detail["synopsis"]:
                 info_lines.append(f"<div class='cinema-synopsis'>📖 {esc_x(detail['synopsis'])}</div>")
             info_html = "".join(info_lines) if info_lines else "<p class='empty' style='margin:6px 0;'>作品詳細（監督・キャスト・あらすじ）を取得できませんでした。</p>"
+            link_html = (f"<a class='cinema-link-btn' href='{esc_x(f['detail_url'])}' target='_blank' rel='noopener'>"
+                         f"🌐 公式サイト/作品詳細へ</a>") if f.get("detail_url") else ""
 
             film_blocks.append(f"""
       <details class="cinema-film-accordion">
         <summary>{esc_x(f['title'])}</summary>
         <div class="cinema-info-block">{info_html}</div>
         {day_rows}
+        {link_html}
       </details>""")
         cinema_html = "".join(film_blocks)
     else:
@@ -1768,6 +1771,7 @@ def render_html(alerts, topics, train_status, earthquakes, x_posts, skip_log):
   .cinema-info-block {{ padding: 0 0 8px; border-bottom: 1px solid var(--rule); margin-bottom: 4px; }}
   .cinema-info-line {{ font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; line-height: 1.5; }}
   .cinema-synopsis {{ font-size: 12.5px; color: var(--ink); line-height: 1.6; margin-top: 4px; }}
+  .cinema-link-btn {{ display: inline-block; margin-top: 8px; margin-bottom: 8px; background: var(--accent); color: #0f172a; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 6px; text-decoration: none; }}
   .rdb-list {{ display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }}
   .rdb-row {{ display: flex; align-items: center; gap: 10px; min-height: 44px; background: #14171c; border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; text-decoration: none; color: var(--ink); font-size: 13px; }}
   .rdb-shop {{ flex: 1; }}
