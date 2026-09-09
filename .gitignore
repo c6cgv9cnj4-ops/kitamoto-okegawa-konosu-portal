@@ -1,0 +1,22 @@
+
+# --- 認証情報・機密（絶対にコミットしない / 2026-09-09 セキュリティ監査で追加）---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+service_account*.json
+*-*.iam.gserviceaccount.com.json
+token.json
+client_secret*.json
+secrets.env
+.set_secrets.sh
+
+# --- Python 環境 ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
