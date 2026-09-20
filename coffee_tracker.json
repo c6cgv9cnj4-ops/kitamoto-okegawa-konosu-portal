@@ -21,10 +21,10 @@
       "id": "tsukuyomi_kitamoto",
       "name": "月詠珈琲（北本本店）",
       "addr": "埼玉県北本市中央3-62",
-      "social_url": "https://instagram.com/kitamoto_coffee_tukuyomi",
-      "social_label": "Instagram",
-      "announcement": null,
-      "announcement_note": "SNS投稿の自動取得は不可（要ログイン）のため、最新のお知らせはInstagramで直接ご確認ください。",
+      "social_url": "https://x.com/tsukuyomi_ki",
+      "social_label": "X (@tsukuyomi_ki)",
+      "announcement": "お盆休みのお知らせ：月詠珈琲北本店・桶川店ともに8月11日〜8月14日まで休業（X @tsukuyomi_ki、2026-08-03投稿、実際に確認済み）",
+      "announcement_note": null,
       "recent_reviews": [
         {"age": "2か月前", "excerpt": "雰囲気も過ごしやすく、ソファー席がふわふわで何時間でもいられそうです。"},
         {"age": "8か月前", "excerpt": "とっても気に入りました！内装は落ち着く感じでとてもセンスがよく居心地の良い雰囲気でした。"}
@@ -37,10 +37,10 @@
       "id": "tsukuyomi_okegawa",
       "name": "月詠珈琲（桶川店）",
       "addr": "埼玉県桶川市若宮1-4-52",
-      "social_url": null,
-      "social_label": null,
-      "announcement": null,
-      "announcement_note": "Googleマップ上に公式サイト・SNS情報の登録がなく、お盆休み等の最新情報は確認できませんでした（未確認情報のため掲載を見送っています）。",
+      "social_url": "https://x.com/tsukuyomi_ki",
+      "social_label": "X (@tsukuyomi_ki)",
+      "announcement": "お盆休みのお知らせ：月詠珈琲北本店・桶川店ともに8月11日〜8月14日まで休業（X @tsukuyomi_ki、2026-08-03投稿、実際に確認済み）",
+      "announcement_note": null,
       "recent_reviews": [
         {"age": "3か月前", "excerpt": "カフェが出来たとのことで来店。キノコも入った食べごたえのあるカルボナーラで美味しかったです。"},
         {"age": "4か月前", "excerpt": "コーヒーの種類が豊富で、ほぼカフェインが含まれない水出しコーヒーもありました。"}
