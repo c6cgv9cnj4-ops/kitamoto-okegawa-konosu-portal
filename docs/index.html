@@ -269,7 +269,7 @@
 <div class="page">
   <header class="top">
     <h1>近隣3市 地域ポータル</h1>
-    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-09-22 15:20 JST
+    <div class="meta">北本市・桶川市・鴻巣市｜最終更新: 2026-09-22 21:00 JST
       <a class="refresh-btn" href="https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions/workflows/update.yml" target="_blank" rel="noopener">🔄 今すぐ更新（GitHub Actionsを開く）</a>
     </div>
   </header>
@@ -285,71 +285,46 @@
   <section class="block">
     <h2>① 鉄道運行情報（JR高崎線・宇都宮線・湘南新宿ライン・上野東京ライン）</h2>
     <div class='train-grid'>
-      <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/48/0" target="_blank" rel="noopener">
+      <a class="train-card status-alert" href="https://transit.yahoo.co.jp/diainfo/48/0" target="_blank" rel="noopener">
         <div class="train-line">JR高崎線</div>
-        <div class="train-status">平常運転</div>
-        <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">9月22日 15時19分更新｜Yahoo!路線情報</div>
+        <div class="train-status">列車遅延</div>
+        <div class="train-detail">高崎駅でのポイント点検の影響などで、一部列車に遅れが出ています。（9月22日 18時25分掲載）</div>
+        <div class="train-updated">9月22日 20時59分更新｜Yahoo!路線情報</div>
       </a>
-      <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/46/46" target="_blank" rel="noopener">
+      <a class="train-card status-alert" href="https://transit.yahoo.co.jp/diainfo/46/46" target="_blank" rel="noopener">
         <div class="train-line">JR宇都宮線</div>
-        <div class="train-status">平常運転</div>
-        <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">9月22日 15時19分更新｜Yahoo!路線情報</div>
+        <div class="train-status">列車遅延</div>
+        <div class="train-detail">大宮駅で発生した線路内立入の影響で、一部列車に遅れが出ています。（9月22日 20時45分掲載）</div>
+        <div class="train-updated">9月22日 21時0分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-alert" href="https://transit.yahoo.co.jp/diainfo/25/0" target="_blank" rel="noopener">
         <div class="train-line">JR湘南新宿ライン</div>
         <div class="train-status">列車遅延</div>
-        <div class="train-detail">高崎線内で発生した線路内立入の影響で、一部列車に遅れが出ています。（9月22日 14時45分掲載）</div>
-        <div class="train-updated">9月22日 15時18分更新｜Yahoo!路線情報</div>
+        <div class="train-detail">大宮駅で発生した線路内立入の影響などで、一部列車に遅れが出ています。（9月22日 18時25分掲載）</div>
+        <div class="train-updated">9月22日 21時0分更新｜Yahoo!路線情報</div>
       </a>
       <a class="train-card status-normal" href="https://transit.yahoo.co.jp/diainfo/627/0" target="_blank" rel="noopener">
         <div class="train-line">JR上野東京ライン</div>
         <div class="train-status">平常運転</div>
         <div class="train-detail">現在､事故･遅延に関する情報はありません。</div>
-        <div class="train-updated">9月22日 15時19分更新｜Yahoo!路線情報</div>
+        <div class="train-updated">9月22日 21時0分更新｜Yahoo!路線情報</div>
       </a></div>
   </section>
 
   <section class="block">
     <h2>② 気象・防災情報（地震・降水量・気温）</h2>
     <h4>地震情報（埼玉県が対象に含まれるもののみ・気象庁XML）</h4>
-    <p class='empty'>直近72時間以内に埼玉県を含む地震情報はありません（気象庁XMLフィードで確認済み）。</p>
+    <div class='eq-grid'>
+      <a class="eq-card" href="https://www.data.jma.go.jp/www.jma.go.jp/bosai/map.html#20260922063746_0_VXSE53_010000" target="_blank" rel="noopener">
+        <div class="eq-title">埼玉県で最大震度2を観測（震源: 茨城県南部）</div>
+        <div class="eq-detail">２２日１５時３４分ころ、地震がありました。 Ｍ３．９</div>
+        <div class="eq-meta">発生: 2026-09-22T15:34:00+09:00｜気象庁 防災情報XML</div>
+      </a></div>
     <h4>時間別降水量（mm/h・本日〜24時間）</h4>
     <div class='precip-chart'>
       <div class="precip-bar-col">
         <div class="precip-bar" style="height:2px"></div>
         <div class="precip-mm">0.0</div>
-        <div class="precip-time">06時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">07時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">08時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">09時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">10時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
-        <div class="precip-time">11時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="precip-bar" style="height:2px"></div>
-        <div class="precip-mm">0.0</div>
         <div class="precip-time">12時</div>
       </div>
       <div class="precip-bar-col">
@@ -436,128 +411,158 @@
         <div class="precip-bar" style="height:2px"></div>
         <div class="precip-mm">0.0</div>
         <div class="precip-time">05時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">06時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">07時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">08時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">09時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">10時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="precip-bar" style="height:2px"></div>
+        <div class="precip-mm">0.0</div>
+        <div class="precip-time">11時</div>
       </div></div>
     <h4>時間別気温（℃・本日〜24時間）</h4>
     <div class='precip-chart'>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:31px"></div>
-        <div class="precip-mm">25.9℃</div>
-        <div class="precip-time">06時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:32px"></div>
-        <div class="precip-mm">26.1℃</div>
-        <div class="precip-time">07時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:37px"></div>
-        <div class="precip-mm">26.7℃</div>
-        <div class="precip-time">08時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:40px"></div>
-        <div class="precip-mm">27.1℃</div>
-        <div class="precip-time">09時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:49px"></div>
-        <div class="precip-mm">28.3℃</div>
-        <div class="precip-time">10時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:62px"></div>
-        <div class="precip-mm">29.9℃</div>
-        <div class="precip-time">11時</div>
-      </div>
-      <div class="precip-bar-col">
-        <div class="temp-bar" style="height:70px"></div>
-        <div class="precip-mm">31.0℃</div>
+        <div class="temp-bar" style="height:72px"></div>
+        <div class="precip-mm">31.1℃</div>
         <div class="precip-time">12時</div>
       </div>
       <div class="precip-bar-col">
         <div class="temp-bar" style="height:76px"></div>
-        <div class="precip-mm">31.8℃</div>
+        <div class="precip-mm">31.7℃</div>
         <div class="precip-time">13時</div>
       </div>
       <div class="precip-bar-col">
         <div class="temp-bar" style="height:80px"></div>
-        <div class="precip-mm">32.2℃</div>
+        <div class="precip-mm">32.1℃</div>
         <div class="precip-time">14時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:80px"></div>
-        <div class="precip-mm">32.2℃</div>
+        <div class="temp-bar" style="height:76px"></div>
+        <div class="precip-mm">31.6℃</div>
         <div class="precip-time">15時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:73px"></div>
-        <div class="precip-mm">31.3℃</div>
+        <div class="temp-bar" style="height:72px"></div>
+        <div class="precip-mm">31.1℃</div>
         <div class="precip-time">16時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:60px"></div>
-        <div class="precip-mm">29.7℃</div>
+        <div class="temp-bar" style="height:61px"></div>
+        <div class="precip-mm">29.6℃</div>
         <div class="precip-time">17時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:46px"></div>
-        <div class="precip-mm">27.9℃</div>
+        <div class="temp-bar" style="height:44px"></div>
+        <div class="precip-mm">27.4℃</div>
         <div class="precip-time">18時</div>
       </div>
       <div class="precip-bar-col">
         <div class="temp-bar" style="height:35px"></div>
-        <div class="precip-mm">26.5℃</div>
+        <div class="precip-mm">26.2℃</div>
         <div class="precip-time">19時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:27px"></div>
-        <div class="precip-mm">25.4℃</div>
+        <div class="temp-bar" style="height:24px"></div>
+        <div class="precip-mm">24.8℃</div>
         <div class="precip-time">20時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:20px"></div>
-        <div class="precip-mm">24.6℃</div>
+        <div class="temp-bar" style="height:18px"></div>
+        <div class="precip-mm">24.0℃</div>
         <div class="precip-time">21時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:17px"></div>
-        <div class="precip-mm">24.1℃</div>
+        <div class="temp-bar" style="height:16px"></div>
+        <div class="precip-mm">23.7℃</div>
         <div class="precip-time">22時</div>
       </div>
       <div class="precip-bar-col">
         <div class="temp-bar" style="height:13px"></div>
-        <div class="precip-mm">23.7℃</div>
+        <div class="precip-mm">23.3℃</div>
         <div class="precip-time">23時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:11px"></div>
-        <div class="precip-mm">23.4℃</div>
+        <div class="temp-bar" style="height:10px"></div>
+        <div class="precip-mm">22.9℃</div>
         <div class="precip-time">00時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:9px"></div>
-        <div class="precip-mm">23.1℃</div>
+        <div class="temp-bar" style="height:7px"></div>
+        <div class="precip-mm">22.5℃</div>
         <div class="precip-time">01時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:8px"></div>
-        <div class="precip-mm">23.0℃</div>
+        <div class="temp-bar" style="height:6px"></div>
+        <div class="precip-mm">22.3℃</div>
         <div class="precip-time">02時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:5px"></div>
-        <div class="precip-mm">22.6℃</div>
+        <div class="temp-bar" style="height:4px"></div>
+        <div class="precip-mm">22.1℃</div>
         <div class="precip-time">03時</div>
       </div>
       <div class="precip-bar-col">
-        <div class="temp-bar" style="height:3px"></div>
-        <div class="precip-mm">22.3℃</div>
+        <div class="temp-bar" style="height:4px"></div>
+        <div class="precip-mm">22.1℃</div>
         <div class="precip-time">04時</div>
       </div>
       <div class="precip-bar-col">
         <div class="temp-bar" style="height:2px"></div>
-        <div class="precip-mm">21.9℃</div>
+        <div class="precip-mm">21.8℃</div>
         <div class="precip-time">05時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">21.6℃</div>
+        <div class="precip-time">06時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">21.5℃</div>
+        <div class="precip-time">07時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">21.6℃</div>
+        <div class="precip-time">08時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">21.6℃</div>
+        <div class="precip-time">09時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:2px"></div>
+        <div class="precip-mm">21.8℃</div>
+        <div class="precip-time">10時</div>
+      </div>
+      <div class="precip-bar-col">
+        <div class="temp-bar" style="height:3px"></div>
+        <div class="precip-mm">22.0℃</div>
+        <div class="precip-time">11時</div>
       </div></div>
   </section>
 
@@ -1316,7 +1321,7 @@
 
   <details class="block accordion">
     <summary>⑤ X（旧Twitter）リアルタイム速報</summary>
-    <div class='rt-timeline'><a class="rt-post" href="https://x.com/Oncle_Jambe/status/2102160934718599562?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>あしながおじさん</span><span class='rt-post-time'>2026/09/21 07:19</span></div><div class='rt-post-body'>返信先: @ sakuraikitamoto 北本市 役所職員一丸で 逮捕 隔離室閉じ込め繰り返し3年 市民に恐ろしい懲罰し 全て奪い 失わせ 窓口対応拒否 支援拒否 無視 無対応  食べ物飲み物まで食うな 外歩くだけで白眼視 職員一丸の凶悪なイジメ 市民や職員の犯罪擦り付け 市民が芝生で遊ぶ為に目の敵の市民 隔離室閉</div></a><a class="rt-post" href="https://x.com/Oncle_Jambe/status/2102159066709770739?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>あしながおじさん</span><span class='rt-post-time'>2026/09/21 07:12</span></div><div class='rt-post-body'>返信先: @ sakuraikitamoto 北本市 役所前の芝生 害加える者と､一歩踏み込んだだけで逮捕し隔離室閉じ込め わざとでなく あたって倒れてしまったアクリル板 起訴しろと逮捕させた職員一丸｡現物支給お願いし 警察通報 生きてるだけで 職員一丸で何から何まで潰され それが職員の接遇 住居強制退去 医療受け入れ</div></a><a class="rt-post" href="https://x.com/sakuraikitamoto/status/2101599421796688016?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>桜井すぐる（北本市議会議員）</span><span class='rt-post-time'>2026/09/20 18:08</span></div><div class='rt-post-body'>修正すべき点が見つかったので修正版に差し替えました。修正箇所、理由についてはnoteに詳しく書きました。お詫び申し上げます。  きたもとウェルビーイング通信【第51号】※一部修正しました｜桜井すぐる｜ 北本市 議会議員 @sakuraikitamoto note.com/sakurai_suguru…</div></a><a class="rt-post" href="https://x.com/MaVyFKokbtNuIoM/status/2101535352603238771?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>猫ろ日</span><span class='rt-post-time'>2026/09/20 13:54</span></div><div class='rt-post-body'>小さな田舎町の祭りはこんな感じ😸  これは昨晩の宵祭り。 町内対抗でそれぞれ好きなテーマで仮装行列するんだけど、夜に出すのはねぷたみたいな光る作りの山車。 終わり頃行ったせい？ 北本市 のねぷた見れなかった😓  今日はこんな仮装山車が沢山出る。 会津若松市の藩校行列と日程丸被り😅残念 pic.x.com/13ZI3IZ</div></a><a class="rt-post" href="https://x.com/kogoeshobo/status/2101522756206776642?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>埼玉県の本屋・書店「小声書房」｜新刊注文＆買取｜１冊からでも大歓迎✨</span><span class='rt-post-time'>2026/09/20 13:04</span></div><div class='rt-post-body'>小声書房1009日目オープンしたことを小さな声でお伝えします。せっかくの連休ですが、荒れ模様の 北本市 です。くれぐれもお気をつけください。本日は20時まで。皆様のご来店をお待ちしてます。 pic.x.com/8uBhgo5s3k</div></a><a class="rt-post" href="https://x.com/uchii4/status/2102271155298324816?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>ち５９８４</span><span class='rt-post-time'>2026/09/22 05:38</span></div><div class='rt-post-body'>お彼岸墓参りのついでに、お寺から近い 桶川市 まで高校時代の仲間2人と待ち合わせして鰻重を食べに来ました🤤 # 川魚料理山中 # 桶川 # 川田谷 pic.x.com/D4HjuI2eV9</div></a><a class="rt-post" href="https://x.com/Shiny_ny_15/status/2102203625057685958?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>しゃい兄ぃ☆</span><span class='rt-post-time'>2026/09/21 10:09</span></div><div class='rt-post-body'>＼いよいよ本日9/22(火・祝)15:00〜 桶川市 商工会館開催／  尊敬しているMokkyさん( @mokky_abc )との主催 # ベイブレードX # S1イベント 📣 🩷オヂミセS1 feat. Mokky＆しゃい兄ぃ 💜  画像の入賞景品である素敵な盾は うさぽんさん( @blackrabbit76 )にご</div></a><a class="rt-post" href="https://x.com/teams_aitama/status/2102220335169044896?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>チーム埼玉</span><span class='rt-post-time'>2026/09/21 11:15</span></div><div class='rt-post-body'>風と青空❣️ チーム信州の方と旗見せしましたよー 埼玉県 桶川市 国道17号線にて。 久しぶりの青空、嬉しかった。 みんなありがとう☀️ # 日本保守党応援 # チーム信州 # チーム埼玉 pic.x.com/6U0FWa3vsq</div></a><a class="rt-post" href="https://x.com/miemiutan/status/2102243114140537010?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>カフェ＆ギャラリー香文木</span><span class='rt-post-time'>2026/09/21 12:46</span></div><div class='rt-post-body'>今月は 猫のミューの誕生月 21歳(人では１００歳) ケーキっぽくデコレートして　　お祝いしました。 喜んで食べてました。 # カフェギャラリー香文木 # 鴻巣市 # 鴻巣市常光 # ねこ bymie pic.x.com/95RrEvFfe6</div></a><a class="rt-post" href="https://x.com/kounosulife/status/2102161695653482680?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>こうのすスローライフ</span><span class='rt-post-time'>2026/09/21 07:22</span></div><div class='rt-post-body'>台風一過…富士山も水管橋も綺麗です😊 【2026.9.22撮影】 # 鴻巣市 # 荒川水管橋 pic.x.com/Pobt49THpc</div></a><a class="rt-post" href="https://x.com/kensoservice/status/2102235218824614093?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>A＆Y</span><span class='rt-post-time'>2026/09/21 12:15</span></div><div class='rt-post-body'>こんにちは☀  今日は晴天ですね〜引き渡し前再クリ1棟完了して！ 今は1K回ってます💪  お昼🍜は埼玉県 鴻巣市 の次念序にしようかと思いましたが…混んでるので💦 他に行きます🚗  いや〜天気が良いと作業スピードが早い早い‼️  午後も皆様ご安全に👷 pic.x.com/r70G1ynHXG</div></a></div>
+    <div class='rt-timeline'><a class="rt-post" href="https://x.com/Oncle_Jambe/status/2102160934718599562?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>あしながおじさん</span><span class='rt-post-time'>2026/09/22 07:19</span></div><div class='rt-post-body'>返信先: @ sakuraikitamoto 北本市 役所職員一丸で 逮捕 隔離室閉じ込め繰り返し3年 市民に恐ろしい懲罰し 全て奪い 失わせ 窓口対応拒否 支援拒否 無視 無対応  食べ物飲み物まで食うな 外歩くだけで白眼視 職員一丸の凶悪なイジメ 市民や職員の犯罪擦り付け 市民が芝生で遊ぶ為に目の敵の市民 隔離室閉</div></a><a class="rt-post" href="https://x.com/Oncle_Jambe/status/2102159066709770739?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>あしながおじさん</span><span class='rt-post-time'>2026/09/22 07:12</span></div><div class='rt-post-body'>返信先: @ sakuraikitamoto 北本市 役所前の芝生 害加える者と､一歩踏み込んだだけで逮捕し隔離室閉じ込め わざとでなく あたって倒れてしまったアクリル板 起訴しろと逮捕させた職員一丸｡現物支給お願いし 警察通報 生きてるだけで 職員一丸で何から何まで潰され それが職員の接遇 住居強制退去 医療受け入れ</div></a><a class="rt-post" href="https://x.com/sakuraikitamoto/status/2101599421796688016?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>北本市</span><span class='rt-post-author'>桜井すぐる（北本市議会議員）</span><span class='rt-post-time'>2026/09/20 18:08</span></div><div class='rt-post-body'>修正すべき点が見つかったので修正版に差し替えました。修正箇所、理由についてはnoteに詳しく書きました。お詫び申し上げます。  きたもとウェルビーイング通信【第51号】※一部修正しました｜桜井すぐる｜ 北本市 議会議員 @sakuraikitamoto note.com/sakurai_suguru…</div></a><a class="rt-post" href="https://x.com/uchii4/status/2102271155298324816?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>ち５９８４</span><span class='rt-post-time'>2026/09/21 14:37</span></div><div class='rt-post-body'>お彼岸墓参りのついでに、お寺から近い 桶川市 まで高校時代の仲間2人と待ち合わせして鰻重を食べに来ました🤤 # 川魚料理山中 # 桶川 # 川田谷 pic.x.com/D4HjuI2eV9</div></a><a class="rt-post" href="https://x.com/Shiny_ny_15/status/2102203625057685958?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>しゃい兄ぃ☆</span><span class='rt-post-time'>2026/09/22 10:09</span></div><div class='rt-post-body'>＼いよいよ本日9/22(火・祝)15:00〜 桶川市 商工会館開催／  尊敬しているMokkyさん( @mokky_abc )との主催 # ベイブレードX # S1イベント 📣 🩷オヂミセS1 feat. Mokky＆しゃい兄ぃ 💜  画像の入賞景品である素敵な盾は うさぽんさん( @blackrabbit76 )にご</div></a><a class="rt-post" href="https://x.com/teams_aitama/status/2102220335169044896?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>桶川市</span><span class='rt-post-author'>チーム埼玉</span><span class='rt-post-time'>2026/09/22 11:15</span></div><div class='rt-post-body'>風と青空❣️ チーム信州の方と旗見せしましたよー 埼玉県 桶川市 国道17号線にて。 久しぶりの青空、嬉しかった。 みんなありがとう☀️ # 日本保守党応援 # チーム信州 # チーム埼玉 pic.x.com/6U0FWa3vsq</div></a><a class="rt-post" href="https://x.com/_old_land/status/2102320679324701001?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>古着屋 OLD LAND（鴻巣免許センターけやき通り）</span><span class='rt-post-time'>2026/09/21 17:54</span></div><div class='rt-post-body'>第3回古着マーケット開催！！！ 鴻巣がまた少し盛り上がる日  ーーーーーーーーーー  【日程】🗓️ 10月4日（日）10:00~16:00  【場所】📍 ビザールパーク （埼玉県 鴻巣市 安養寺 214-2）  【駐車場】🚙 無料駐車場有り  【主催】 OLD LAND @_old_land # 古着マーケット # 鴻</div></a><a class="rt-post" href="https://x.com/miemiutan/status/2102243114140537010?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>カフェ＆ギャラリー香文木</span><span class='rt-post-time'>2026/09/21 12:46</span></div><div class='rt-post-body'>今月は 猫のミューの誕生月 21歳(人では１００歳) ケーキっぽくデコレートして　　お祝いしました。 喜んで食べてました。 # カフェギャラリー香文木 # 鴻巣市 # 鴻巣市常光 # ねこ bymie pic.x.com/95RrEvFfe6</div></a><a class="rt-post" href="https://x.com/emimi_slot/status/2102314079151124939?utm_source=yjrealtime&amp;utm_medium=search" target="_blank" rel="noopener"><div class='rt-post-head'><span class='rt-post-city'>鴻巣市</span><span class='rt-post-author'>スロッターEmimi 🍷🗽来店事務所『Emimiんち』の主😺</span><span class='rt-post-time'>2026/09/21 17:28</span></div><div class='rt-post-body'>いま向かってるので情報収集😺✨ 愛知県刈谷市といえば❓ （パチスロ以外で）  前回の埼玉県 鴻巣市 では免許センターが圧倒的でした🤣 pic.x.com/rMqeGHibzi</div></a></div>
     <div class="x-link-grid">
       <a class="x-search-btn" href="https://twitter.com/search?q=%23%E5%8C%97%E6%9C%AC%E5%B8%82&src=typed_query&f=live" target="_blank" rel="noopener">
         🔗 #北本市 をXで検索
@@ -1337,68 +1342,66 @@
       
     <div class="card topic-card">
       <div class="topic-head">
-        <span class="paper-name" style="color:#3b82f6">日経新聞（朝日新聞・毎日新聞・読売新聞も同時報道）</span>
-        <span class="paper-time">09/22 12:33</span>
+        <span class="paper-name" style="color:#3b82f6">日経新聞（朝日新聞も同時報道）</span>
+        <span class="paper-time">09/22 18:55</span>
       </div>
-      <div class="topic-title">Googleが「AIパソコン」､スマホと連携強化　海外先行で14万円台から</div>
-      <div class='topic-summary'>【シリコンバレー=伴正春】米グーグルは21日、人工知能（AI）機能に特化して開発したノートパソコン「グーグルブック」を発売すると発表した。同社の基本ソフト（OS）を使うス…</div>
-      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOGN212CR0R20C26A9000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      <div class="topic-title">競泳・小島夢貴が400個人メドレーV、松下知之は2位　アジア大会</div>
+      <div class='topic-summary'>愛知・名古屋アジア大会第4日は22日に行われ、競泳男子400メートル個人メドレーで小島夢貴（愛知・豊川高）が優勝した。松下知之（東洋大）は2位となり、200メートル個人メ…</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQODH221J20S6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
     </div>
     <div class="card topic-card">
       <div class="topic-head">
-        <span class="paper-name" style="color:#3b82f6">日経新聞（毎日新聞も同時報道）</span>
-        <span class="paper-time">09/22 12:06</span>
+        <span class="paper-name" style="color:#3b82f6">日経新聞（朝日新聞も同時報道）</span>
+        <span class="paper-time">09/22 18:02</span>
       </div>
-      <div class="topic-title">高市首相、トランプ氏と23日未明会談へ　米中前に日本の立場説明</div>
-      <div class='topic-summary'>【ニューヨーク=小林多治生】高市早苗首相は22日（日本時間23日未明）、米ニューヨークでトランプ米大統領と会談する。24日の米中首脳会談を前に、中国による台湾海峡周辺での…</div>
-      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOUA201PD0Q6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      <div class="topic-title">バスケBプレミア開幕、A東京が琉球に勝利</div>
+      <div class='topic-summary'>バスケットボールBリーグの新1部、りそなBプレミアは22日、トヨタアリーナ東京での1試合で開幕し、A東京が琉球に84-73で勝利した。A東京は50-51で入った第3クオー…</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQODH221A60S6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
     </div>
     <div class="card topic-card">
       <div class="topic-head">
         <span class="paper-name" style="color:#f59e0b">読売新聞（朝日新聞・毎日新聞も同時報道）</span>
-        <span class="paper-time">09/22 05:56</span>
+        <span class="paper-time">09/22 11:31</span>
       </div>
-      <div class="topic-title">4 「日本人女性は外国人からすると“割安商品”」　日本人男性は「立ちんぼ」との交渉でも断られ…　なぜ日本は「オワコン」化したのか デイリー新潮</div>
-      <div class='topic-summary'>【前後編の後編/前編からの続き】
-
-　テレビをつけてもスマホを眺めても、飛び込んでくるのは気の滅入るニュースばかり。嘆かわしいちまたに目をやれば、つい「昔はよかった」など…</div>
-      <a class="topic-link" href="https://news.yahoo.co.jp/articles/5323edb1a546d6b96b7fa0a9e6bf6b21c3835c4c" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      <div class="topic-title">5 【広島】新井貴浩監督が続投へ　シーズン中に３度、球団に辞意伝える…「ゾンビたばこ」を巡る激動シーズン　来季５年目は高い求心力で根本的な立て直しを目指す スポーツ報知</div>
+      <div class='topic-summary'>広島・新井貴浩監督（４９）が来季も続投することが２２日、分かった。１月２７日に羽月隆太郎氏が通称「ゾンビたばこ」と呼ばれる指定薬物を使用し、医薬品医療機器法違反で逮捕。グ…</div>
+      <a class="topic-link" href="https://news.yahoo.co.jp/articles/a7144b6fec6ba2579e6322098eaaedef40131911" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+    </div>
+    <div class="card topic-card">
+      <div class="topic-head">
+        <span class="paper-name" style="color:#10b981">毎日新聞（朝日新聞も同時報道）</span>
+        <span class="paper-time">09/22 12:39</span>
+      </div>
+      <div class="topic-title">「腰まで水につかるので…」　佐倉市で道路冠水、住民帰宅できず</div>
+      <div class='topic-summary'>千葉県佐倉市表町やその周辺では近くにある利根川水系の高崎川が氾濫したとみられ、22日午前も住宅地や道路が冠水し、通行止めが続いた。県警佐倉署前の道路も水が引かず、歩行者は…</div>
+      <a class="topic-link" href="https://news.yahoo.co.jp/articles/8ff7e4fa74ec81aa2c8fef7a0da316330d5834da" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
     </div>
     <div class="card topic-card">
       <div class="topic-head">
         <span class="paper-name" style="color:#3b82f6">日経新聞</span>
-        <span class="paper-time">09/22 13:00</span>
+        <span class="paper-time">09/22 18:43</span>
       </div>
-      <div class="topic-title">習近平氏、幻の11年ぶり国連演説　「対等」演出こだわった2泊3日訪米</div>
-      <div class='topic-summary'>中国外務省は21日、習近平（シー・ジンピン）国家主席が23〜25日に米ワシントンを訪れると発表した。24日にホワイトハウスでトランプ大統領と会談する。一時、その前後の日程…</div>
-      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOGN15BB30V10C26A9000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      <div class="topic-title">大相撲秋場所中入り後取組・11日目</div>
+      <div class='topic-summary'>（東）　（西）出龍X-X千翔若元14-4翔猿王鵬0-0朝白湘南2-1獅司宇良0-0寿富正代3-2平戸尊富3-2阿炎朝翠0-0錦富藤青0-0時疾朝紅0-0一山朝山3―</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZMSX000S01_S6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
     </div>
     <div class="card topic-card">
       <div class="topic-head">
         <span class="paper-name" style="color:#3b82f6">日経新聞</span>
-        <span class="paper-time">09/22 12:16</span>
+        <span class="paper-time">09/22 18:43</span>
       </div>
-      <div class="topic-title">台風25号、千葉と神奈川で4人死亡　6人行方不明</div>
-      <div class='topic-summary'>台風25号に伴う大雨の影響で、千葉県や神奈川県では土砂崩れなどが相次いだ。気象庁は東日本から東北地方の太平洋側について、土砂災害や低い土地への浸水、河川の増水などに警戒す…</div>
-      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOUD212770R20C26A9000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      <div class="topic-title">大相撲秋場所星取表・10日目の結果</div>
+      <div class='topic-summary'>【東】大の里 　　9勝1敗霧島 　　　5勝5敗安青錦 　　7勝3敗熱海富士 　8勝2敗伯乃富士 　3勝7敗琴勝峰 　　5勝5敗高安 　　　3勝7敗豪ノ山 　　3勝7敗隆の…</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZMSK3ISU02_S6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
     </div>
     <div class="card topic-card">
       <div class="topic-head">
         <span class="paper-name" style="color:#3b82f6">日経新聞</span>
-        <span class="paper-time">09/22 10:46</span>
+        <span class="paper-time">09/22 18:42</span>
       </div>
-      <div class="topic-title">北朝鮮、20日に新型兵器試射　日本射程の極超音速弾か</div>
-      <div class='topic-summary'>【北京=共同】北朝鮮メディアは22日、同国のミサイル総局が新型兵器の試験を20日に実施したと報じた。兵器の詳しい説明はなかったが、極超音速弾頭を搭載したとみられる弾道ミサ…</div>
-      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOCB220FG0S6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
-    </div>
-    <div class="card topic-card">
-      <div class="topic-head">
-        <span class="paper-name" style="color:#3b82f6">日経新聞</span>
-        <span class="paper-time">09/22 10:36</span>
-      </div>
-      <div class="topic-title">米政権、中東再建へ1.5兆円規模の基金提案　米紙報道</div>
-      <div class='topic-summary'>【ワシントン=共同】米紙ウォール・ストリート・ジャーナルは21日、イランとの戦闘で被害を受けたペルシャ湾岸地域のエネルギー関連インフラを再建するため、米国が総額100億ド…</div>
-      <a class="topic-link" href="https://www.nikkei.com/article/DGXZQOCB220EZ0S6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      <div class="topic-title">大相撲秋場所中入り後勝負・10日目</div>
+      <div class='topic-summary'>（勝）　　　　　　　（負）嵐富士　押し倒し　　朝翠龍湘南海　小手投げ　　朝紅龍朝白龍　押し出し　　正　代金峰山　下手投げ　　寿富士時疾風　上手投げ　　尊富士平戸海　引き落…</div>
+      <a class="topic-link" href="https://www.nikkei.com/article/DGXZMSK3ISU01_S6A920C2000000/" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
     </div>
     </section>
     <section class="block">
@@ -1406,14 +1409,14 @@
       <p class="disclaimer">海外メディア原文の機械翻訳・全文転載は著作権上行わず、それらを報じる国内メディアの実際の日本語記事＋元記事リンクのみを掲載しています。</p>
       
       <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">09/22 04:59</span></div>
+        <div class="topic-title">アメリカのカリブ海などでの小型船攻撃、人道に対する罪の可能性と国連報告者</div>
+        <a class="topic-link" href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE1xQV90a0ROamtITFFHMzlzVC1aUHNTZHhqU2NFaEZYQW12VDZvLTVMdWZhSlAtTURXTy1saFdYeW9wYml6SEEza3BmNkNWMVZWQWh5RXZXaUdlcEttRjYyRdIBZkFVX3lxTE5ybnFQUV9Ndm42LTdEQ3VVN3hVS1dEQUsxbC05b3J3MnAtbWxEaFViNUkzVDJXSUQ5ODBGTEtfYThZMEtaU2s5eW4yRjV2U3IweW83Z3ZEZENIWC1BZk4tdEViTzdmQQ?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>
+      <div class="card topic-card">
         <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">09/21 01:35</span></div>
         <div class="topic-title">トランプ政権、国際刑事裁判所に対する制裁を準備＝関係筋</div>
         <a class="topic-link" href="https://news.google.com/rss/articles/CBMif0FVX3lxTE00V2JFWTJxLWZ6bGFsVDNXVGt1VTFyb0JtUXJBZ29UUHhvZVZic250azhBYTV0LVJyZ244ZGJ1OWZJeWNJTFFjYjNEamVPY0U1Vldwd2s3eXFMU2x6aUNva1BGMmhZUTBLejdtVkdhRm5ZeUNRaS01c0FSZ2E5X0E?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
-      </div>
-      <div class="card topic-card">
-        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">09/21 16:22</span></div>
-        <div class="topic-title">CNNなど3社が米政権を提訴 「ホワイトハウス排除は違憲」主要局は代表取材を辞退</div>
-        <a class="topic-link" href="https://news.google.com/rss/articles/CBMiVkFVX3lxTE5PYVRPeWVrVldSM1AtRzFtZzhySHVpbVNsYXNveVNtX2gwZmVXN2RBdUo4Y0lDX3pRdzhnck5oR0k5ZkZ0OVM5c0E4bnhzOHJuM1oteUZB?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
       </div>
       <div class="card topic-card">
         <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">09/21 01:35</span></div>
@@ -1421,14 +1424,14 @@
         <a class="topic-link" href="https://news.google.com/rss/articles/CBMif0FVX3lxTFAzQkZQdHFRM1Q3cEs1NmhMVXlwWllBLVduOFpfdjAtUDRrNUVaMmo5dU5GenNzRlIwZzdnOXdWTVJHX0hrVFNLM05TWFEtYkd5eWhsd2N1OW5sLUl6bDA0NlgxSkIwZjNWd3RRQ1FzZnpLb0NvMi03LVB0Tm9SZDQ?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
       </div>
       <div class="card topic-card">
+        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">09/22 01:44</span></div>
+        <div class="topic-title">CNNなど米政権を提訴 トランプ大統領の対応は</div>
+        <a class="topic-link" href="https://news.google.com/rss/articles/CBMiVEFVX3lxTE9OQjl3bm5XNTJXSWV2UkZsT0paWGNjZVFoZk16YlhDX1ZLVVBLUXpGTzVYTnYtWG1nZ0g1dkVfN0RCc2FxNVFzVnBBZGFUQ3RRVTQ3eA?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
+      </div>
+      <div class="card topic-card">
         <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">09/19 07:00</span></div>
         <div class="topic-title">〈夕刊トピックス〉米大統領、ＣＮＮ排除 虚偽報道と批判｜国際｜全国のニュース</div>
         <a class="topic-link" href="https://news.google.com/rss/articles/CBMiV0FVX3lxTE81Y1ZuU3U5VlVyLWFhbi10QUl6WkpwSVNhM0N6dVR5M0FvWTFIZjdJM2Z0U01EdzdFWjlZRjhyY2UxTWd0amFkTHJlekZ4dURTX0JFbWVzOA?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
-      </div>
-      <div class="card topic-card">
-        <div class="topic-head"><span class="paper-name">海外情勢（国内報道）</span><span class="paper-time">09/19 21:30</span></div>
-        <div class="topic-title">トランプ氏 CNNなどに不満 ホワイトハウスで記者証没収</div>
-        <a class="topic-link" href="https://news.google.com/rss/articles/CBMiVkFVX3lxTFBEZFRmb3JYZUM0Nm1CX3JKY2cxWEh4XzNjLVBDM3BLVnhiTkp1UUVOTmZSYmNGQk00cHpHUDdUelJNcGp2c3Btc1FCSkhBckZhQ3l1Y2tn?oc=5" target="_blank" rel="noopener">全文を読む（元記事へ）→</a>
       </div>
     </section>
   </div>
@@ -1450,13 +1453,13 @@
       </div>
       <div class="mk-card">
         <div class="mk-label">ドル/円</div>
-        <div class="mk-value">157.63</div>
-        <div class="mk-change mk-up">+0.59（+0.37%）</div>
+        <div class="mk-value">157.14</div>
+        <div class="mk-change mk-up">+0.09（+0.06%）</div>
       </div>
       <div class="mk-card">
         <div class="mk-label">VIX指数</div>
-        <div class="mk-value">14.87</div>
-        <div class="mk-change mk-up">+0.06（+0.41%）</div>
+        <div class="mk-value">14.71</div>
+        <div class="mk-change mk-down">-0.16（-1.08%）</div>
       </div></div>
   </details>
   </div>
@@ -1495,7 +1498,7 @@
       <div class="stock-card" data-code="1930">
         <div class="stock-head"><span class="stock-code">1930</span><span class="stock-name">北陸電気工事</span></div>
         <div class="stock-price"><span class='mk-value'>1608.0円</span><span class='mk-change mk-down'>-10.0（-0.62%）</span></div>
-        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMiUkFVX3lxTE5HbXpZLUJqSUh3UTNxMEMxV3RTOTNQWFFhLWlRMHNNazFGNU82ZTJXU25oMFEwRjdidXhHdmNiSW9ac1ZCREJFZ3FPZnFTRXJUWUE?oc=5" target="_blank" rel="noopener">📰 北陸電工、4-6月期(1Q)経常は86％増益で着地</a><a class="info-link" href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE9EUHUtT1lxM1dkam52aEZWRmxYNDB1ZkdxWmhzc1M5RGRBaHVxdG85RC1KVUdjellfZ0dPbXNWdV91X09WTi1ubmVEc1dTX3YwcmRMZzJFWGRWMHAwRGNn?oc=5" target="_blank" rel="noopener">📰 【北陸電気工事 FY2025 FY 決算説明会】売上高610億円・経常利益54億円、3期連続で過去最高更新 26年度は700億円へ</a></div>
+        <div class="info-link-grid"><a class="info-link" href="https://news.google.com/rss/articles/CBMiUkFVX3lxTE5HbXpZLUJqSUh3UTNxMEMxV3RTOTNQWFFhLWlRMHNNazFGNU82ZTJXU25oMFEwRjdidXhHdmNiSW9ac1ZCREJFZ3FPZnFTRXJUWUE?oc=5" target="_blank" rel="noopener">📰 北陸電工、4-6月期(1Q)経常は86％増益で着地</a><a class="info-link" href="https://news.google.com/rss/articles/CBMiakFVX3lxTFBsTXdKZ1h4cGhpd3g3VWIzdkFoMUxMNlRSbWtLWW1fcFNBZ0tPLUJnWTluSzhjb0NxV1NTRWpPSXdXUGMxdXpob0NlemxKblEwRVpxdzR4TTNMUldocDFudktxRTFheExVV2c?oc=5" target="_blank" rel="noopener">📰 北陸電気工事[1930]：第112回定時株主総会招集通知及び株主総会資料 2026年6月1日(適時開示) ：日経会社情報DIGITAL</a></div>
       </div>
       <div class="stock-card" data-code="5532">
         <div class="stock-head"><span class="stock-code">5532</span><span class="stock-name">REALITY Studios</span></div>
@@ -1514,7 +1517,7 @@
   <details class="block accordion">
     <summary>⚙️ システム状態・自動更新について</summary>
     <ul class="system-status-list">
-      <li>このページの生成時刻（JST）: 2026-09-22 15:20 JST</li>
+      <li>このページの生成時刻（JST）: 2026-09-22 21:00 JST</li>
       <li>自動更新間隔: 15分おき（GitHub Actions cron: 3,18,33,48 * * * *）</li>
       <li>実行環境: GitHub Actions（Macの電源・スリープに依存しない）</li>
       <li>実行履歴の確認: <a href="https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions" target="_blank" rel="noopener">https://github.com/c6cgv9cnj4-ops/kitamoto-okegawa-konosu-portal/actions</a></li>
@@ -1524,7 +1527,7 @@
 
   <footer>
     データ取得状況（スキップログ）:
-    <ul><li>気象庁 地震情報: 直近72時間以内に埼玉県を含む地震情報なし（気象庁XMLフィードは正常に取得できています）</li><li>当番医PDF［桶川北本伊奈地区医師会］: 取得・解析エラー (404 Client Error: Not Found for url: https://www.city.okegawa.lg.jp/material/files/group/28/Dr_Aug2026.pdf)</li></ul>
+    <ul><li>当番医PDF［桶川北本伊奈地区医師会］: 取得・解析エラー (404 Client Error: Not Found for url: https://www.city.okegawa.lg.jp/material/files/group/28/Dr_Aug2026.pdf)</li></ul>
     <p>※ 消防出動情報はライブ配信元がJavaScript動的読み込みのため、静的スクレイピングでは取得できず、消防本部の公式お知らせを代替表示しています。</p>
     <p>※ 北本市・桶川市・鴻巣市の公式サイトはJSタブ構造のため新着情報を直接取得できず、Google Newsの検索結果（直近21日以内のみ）で代替しています。NHK埼玉のRSS配信は廃止済みのため対象外です。</p>
     <p>※ 防犯・防災アラート／地域トピックは、同一ニュースの重複掲載を除去したうえで、直近7日以内に日付が確認できたもののみを表示しています（日付が確認できない情報は「最新のみ」の要件を満たせないため対象外にしています）。</p>
